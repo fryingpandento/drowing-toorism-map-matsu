@@ -265,6 +265,12 @@ select {
         bottom: 10px;
         height: auto;
     }
+
+    /* Hide complex drawing modes on mobile */
+    #mode-draw,
+    #mode-box {
+        display: none !important;
+    }
 }
 
 /* Mode Buttons */

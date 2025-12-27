@@ -152,6 +152,12 @@ function setMode(mode) {
     document.getElementById('mode-box').classList.toggle('active', mode === 'box');
     document.getElementById('mode-radius').classList.toggle('active', mode === 'radius');
 
+    // Toggle Radius Control
+    const radiusCtrl = document.getElementById('radius-control');
+    if (radiusCtrl) {
+        radiusCtrl.style.display = (mode === 'radius') ? 'block' : 'none';
+    }
+
     const hint = document.getElementById('mode-hint');
     if (hint) {
         if (mode === 'pan') {
@@ -164,7 +170,7 @@ function setMode(mode) {
             hint.textContent = "ドラッグして四角形で囲んでください。";
             if (map && map.dragging) map.dragging.disable();
         } else if (mode === 'radius') {
-            hint.textContent = "地図上の点をクリックすると、周辺(3km)を検索します。";
+            hint.textContent = "地図上の点をクリックすると、周辺を検索します。";
             if (map && map.dragging) map.dragging.enable(); // Allow panning
         }
     }
@@ -273,8 +279,9 @@ function onPointSearch(e) {
     // Clear previous
     if (currentPolygon) map.removeLayer(currentPolygon);
 
-    // Create a 3km radius circle (approx) for visualization
-    const radiusMeters = 3000;
+    // Get selected radius or default to 3km
+    const radiusSelect = document.getElementById('radius-select');
+    const radiusMeters = radiusSelect ? parseInt(radiusSelect.value, 10) : 3000;
 
     const circle = L.circle(center, {
         radius: radiusMeters,

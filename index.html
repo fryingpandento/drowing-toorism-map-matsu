@@ -33,6 +33,18 @@
                 <p id="mode-hint" style="font-size:0.8em; color:#666; margin-top:5px;">
                     地図をドラッグして移動します。
                 </p>
+
+                <!-- Radius Selector (Visible for Radius Mode) -->
+                <div id="radius-control" style="margin-top:10px; display:none;">
+                    <label style="font-size:0.9em;">半径:</label>
+                    <select id="radius-select" style="padding:5px;">
+                        <option value="500">500m</option>
+                        <option value="1000">1km</option>
+                        <option value="3000" selected>3km</option>
+                        <option value="5000">5km</option>
+                        <option value="10000">10km</option>
+                    </select>
+                </div>
             </div>
 
             <div class="control-group">
