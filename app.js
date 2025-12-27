@@ -158,37 +158,46 @@ async function searchSpots() {
     // 2. Build Query
     let queryParts = "";
 
-    // Simplify polygon for performance
-    const rawLatLngs = currentPolygon.getLatLngs()[0];
-    const simplifiedLatLngs = simplifyLatLngs(rawLatLngs, 0.0001); // Approx 10m
-    const polyStr = simplifiedLatLngs.map(ll => `${ll.lat} ${ll.lng}`).join(' ');
-
-    selectedCats.forEach(cat => {
-        if (TOURISM_FILTERS[cat]) {
-            TOURISM_FILTERS[cat].forEach(q => {
-                // Polygon Search
-                queryParts += `${q}(poly:"${polyStr}");\n`;
-            });
-        }
-    });
-
-    const overpassQuery = `
-    [out:json][timeout:60];
-    (
-      ${queryParts}
-    );
-    // Keep only named items
-    (._; >;);
-    out center body;
-    `;
-
     try {
-        const response = await fetch("https://overpass.kumi.systems/api/interpreter", {
-            method: "POST",
-            body: "data=" + encodeURIComponent(overpassQuery)
+        // Simplify polygon for performance
+        const rawLatLngs = currentPolygon.getLatLngs()[0];
+        if (!rawLatLngs || rawLatLngs.length === 0) throw new Error("無効なエリアです");
+
+        const simplifiedLatLngs = simplifyLatLngs(rawLatLngs, 0.0001); // Approx 10m
+        const polyStr = simplifiedLatLngs.map(ll => `${ll.lat} ${ll.lng}`).join(' ');
+
+        selectedCats.forEach(cat => {
+            if (TOURISM_FILTERS[cat]) {
+                TOURISM_FILTERS[cat].forEach(q => {
+                    // Polygon Search
+                    queryParts += `${q}(poly:"${polyStr}");\n`;
+                });
+            }
         });
 
-        if (!response.ok) throw new Error("API Error");
+        const overpassQuery = `
+        [out:json][timeout:30];
+        (
+          ${queryParts}
+        );
+        // Keep only named items
+        (._; >;);
+        out center body;
+        `;
+
+        // 15 sec timeout for fetch
+        const controller = new AbortController();
+        const timeoutId = setTimeout(() => controller.abort(), 15000);
+
+        const response = await fetch("https://overpass.kumi.systems/api/interpreter", {
+            method: "POST",
+            body: "data=" + encodeURIComponent(overpassQuery),
+            signal: controller.signal
+        });
+
+        clearTimeout(timeoutId);
+
+        if (!response.ok) throw new Error("API Error: " + response.status);
 
         const data = await response.json();
         const elements = data.elements || [];
@@ -219,7 +228,11 @@ async function searchSpots() {
 
     } catch (e) {
         console.error(e);
-        alert("データ取得に失敗しました。");
+        if (e.name === 'AbortError') {
+            alert("検索がタイムアウトしました。範囲を狭めて試してください。");
+        } else {
+            alert("データ取得に失敗しました: " + e.message);
+        }
     } finally {
         loader.classList.add('hidden');
     }
