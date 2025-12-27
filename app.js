@@ -108,6 +108,10 @@ function initMap() {
 }
 
 function initUI() {
+    // Mode Toggle Logic
+    document.getElementById('mode-pan').addEventListener('click', () => setMode('pan'));
+    document.getElementById('mode-draw').addEventListener('click', () => setMode('draw'));
+
     // Region Select
     const regionSelect = document.getElementById('region-select');
     Object.keys(REGIONS).forEach(key => {

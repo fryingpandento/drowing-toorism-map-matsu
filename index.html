@@ -25,6 +25,18 @@
                 <select id="region-select"></select>
             </div>
 
+            <!-- Mode Toggle (Hardcoded for stability) -->
+            <div class="control-group">
+                <label>操作モード</label>
+                <div style="display:flex; gap:10px;">
+                    <button id="mode-pan" class="mode-btn active">移動</button>
+                    <button id="mode-draw" class="mode-btn">✏️ 描く</button>
+                </div>
+                <p id="mode-hint" style="font-size:0.8em; color:#666; margin-top:5px;">
+                    地図をドラッグして移動します。
+                </p>
+            </div>
+
             <p class="description">
                 地図上の描画ボタン（四角形や多角形）を使って範囲を囲むと、そのエリアのディープな観光地を抽出します。
             </p>
