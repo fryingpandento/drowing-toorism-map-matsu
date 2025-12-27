@@ -379,6 +379,8 @@ async function searchSpots(layer) {
 
     // Get Bounds
     const bounds = layer.getBounds();
+    const searchCenter = bounds.getCenter(); // Center for distance calc
+
     // Overpass BBox: (south, west, north, east)
     areaFilter = `(${bounds.getSouth()},${bounds.getWest()},${bounds.getNorth()},${bounds.getEast()})`;
 
@@ -417,7 +419,7 @@ async function searchSpots(layer) {
         const data = await response.json();
         const elements = data.elements || [];
 
-        // 4. Client-side Processing (Dedupe & Filter)
+        // 4. Client-side Processing (Dedupe & Filter & Distance)
         const seen = new Set();
         allSpots = [];
 
@@ -436,9 +438,15 @@ async function searchSpots(layer) {
             const lon = el.lon || (el.center && el.center.lon);
 
             if (lat && lon) {
-                allSpots.push({ ...el, lat, lon });
+                // Calculate Distance
+                const dist = map.distance(searchCenter, [lat, lon]);
+
+                allSpots.push({ ...el, lat, lon, distance: dist });
             }
         });
+
+        // Sort by Distance
+        allSpots.sort((a, b) => a.distance - b.distance);
 
         statusMsg.textContent = `完了: ${allSpots.length}件`;
         displayResults(allSpots);
@@ -526,12 +534,22 @@ function createCard(spot, container) {
         detailsHtml.push(`<span title="${tags.opening_hours}" style="cursor:help;">🕒 時間</span>`);
     }
 
+    // Distance Formatting
+    let distText = "";
+    if (spot.distance !== undefined) {
+        if (spot.distance >= 1000) {
+            distText = (spot.distance / 1000).toFixed(1) + "km";
+        } else {
+            distText = Math.round(spot.distance) + "m";
+        }
+    }
+
     const googleUrl = `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(name + " 観光")}`;
 
     const card = document.createElement('div');
     card.className = 'spot-card';
     card.innerHTML = `
-        <div class="spot-title">${name}</div>
+        <div class="spot-title">${name} <span style="font-size:0.8em; color:#ff4b4b; margin-left:5px;">📍${distText}</span></div>
         <div style="margin: 5px 0;">
             <span class="spot-tag">${subtype}</span>
             <span class="spot-details">${detailsHtml.join(' ')}</span>
@@ -546,7 +564,7 @@ function createCard(spot, container) {
         map.setView([spot.lat, spot.lon], 16);
         L.popup()
             .setLatLng([spot.lat, spot.lon])
-            .setContent(`<b>${name}</b>`)
+            .setContent(`<b>${name}</b><br>📍${distText}`)
             .openOn(map);
 
         // Auto-collapse sidebar on mobile to show map
