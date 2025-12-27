@@ -63,6 +63,11 @@ document.addEventListener('DOMContentLoaded', () => {
     }
     initMap(mapElement);
     initUI();
+
+    // Default to 'Radius' mode on mobile
+    if (window.innerWidth <= 768) {
+        setMode('radius');
+    }
 });
 
 function initMap(mapElement) {
