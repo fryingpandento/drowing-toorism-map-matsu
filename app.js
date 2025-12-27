@@ -166,13 +166,16 @@ function initUI() {
     // Mobile Bottom Sheet Toggle
     const sidebarHandle = document.getElementById('sidebar-handle');
     const sidebar = document.getElementById('sidebar');
-    if (sidebarHandle && sidebar) {
-        sidebarHandle.addEventListener('click', () => {
-            sidebar.classList.toggle('expanded');
-        });
+    const header = document.querySelector('#sidebar h1'); // Select the H1
 
-        // Optional: Close when clicking map (simple UX rule)
-        // If map is clicked, we might want to collapse sidebar if expanded
+    if (sidebar && (sidebarHandle || header)) {
+        const toggleSidebar = () => {
+            sidebar.classList.toggle('expanded');
+        };
+
+        if (sidebarHandle) sidebarHandle.addEventListener('click', toggleSidebar);
+        // Also toggle when clicking the title (easier target)
+        if (header) header.addEventListener('click', toggleSidebar);
     }
 }
 

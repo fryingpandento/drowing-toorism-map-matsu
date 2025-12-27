@@ -263,12 +263,17 @@ select {
 
     /* Drag Handle */
     #sidebar-handle {
-        width: 40px;
+        width: 60px;
+        /* Wider visual handle */
         height: 5px;
         background-color: #ccc;
         border-radius: 3px;
-        margin: 0 auto 15px auto;
+        margin: 5px auto 15px auto;
         cursor: pointer;
+        padding: 10px 0;
+        /* Increase touch area */
+        background-clip: content-box;
+        /* Keep line thin but area big */
     }
 
     #main-content {
