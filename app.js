@@ -61,49 +61,42 @@ document.addEventListener('DOMContentLoaded', () => {
 
 function initMap() {
     // 1. Initialize Map (Kyoto Default)
-    map = L.map('map').setView([34.9858, 135.7588], 13);
+    map = L.map('map', {
+        dragging: true, // Default enabled
+        tap: true
+    }).setView([34.9858, 135.7588], 13);
 
     // 2. Tile Layer (OSM)
     L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png', {
         attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
     }).addTo(map);
 
-    // 3. Initialize Drawing (Leaflet.draw)
-    drawnItems = new L.FeatureGroup();
-    map.addLayer(drawnItems);
+    // 3. Custom Freehand Drawing Events
+    // Mouse Events
+    map.on('mousedown', startDraw);
+    map.on('mousemove', moveDraw);
+    map.on('mouseup', endDraw);
 
-    drawControl = new L.Control.Draw({
-        draw: {
-            polyline: false,
-            polygon: true,
-            rectangle: true,
-            circle: false,
-            marker: false,
-            circlemarker: false
-        },
-        edit: {
-            featureGroup: drawnItems,
-            remove: true
-        }
-    });
-    map.addControl(drawControl);
+    // Touch Events (for Mobile)
+    const mapContainer = map.getContainer();
 
-    // 4. Event Listeners
-    map.on(L.Draw.Event.CREATED, function (e) {
-        // Clear previous drawings (User usually wants to search one area)
-        drawnItems.clearLayers();
+    mapContainer.addEventListener('touchstart', (e) => {
+        if (!isDrawingMode()) return;
+        // Don't prevent default everywhere or we can't pan in pan mode.
+        // Prevent default only if in Draw Mode
+        e.preventDefault();
+        startDraw(e);
+    }, { passive: false });
 
-        const layer = e.layer;
-        drawnItems.addLayer(layer);
+    mapContainer.addEventListener('touchmove', (e) => {
+        if (!isDrawingMode()) return;
+        if (isDrawing) e.preventDefault(); // Stop scroll while drawing
+        moveDraw(e);
+    }, { passive: false });
 
-        // Trigger Search immediately (or could be manual, but app.py implies reactive)
-        // Let's keep it manual via button or auto? 
-        // app.py says "mapの初期位置を更新" etc.
-        // Let's do it like app.py: Trigger search when drawing finishes?
-        // Actually app.py runs on re-render.
-        // Let's add a "Search this area" toast or just run it.
-        // For robustness, let's run it.
-        searchSpots(layer);
+    mapContainer.addEventListener('touchend', (e) => {
+        if (!isDrawingMode()) return;
+        endDraw();
     });
 }
 
@@ -146,6 +139,82 @@ function initUI() {
     document.getElementById('filter-web').addEventListener('change', applyFiltersBound);
     document.getElementById('filter-wiki').addEventListener('change', applyFiltersBound);
     document.getElementById('filter-hours').addEventListener('change', applyFiltersBound);
+}
+
+// --- Mode Management ---
+let currentMode = 'pan';
+
+function setMode(mode) {
+    currentMode = mode;
+    document.getElementById('mode-pan').classList.toggle('active', mode === 'pan');
+    document.getElementById('mode-draw').classList.toggle('active', mode === 'draw');
+
+    const hint = document.getElementById('mode-hint');
+    if (hint) {
+        if (mode === 'pan') {
+            hint.textContent = "地図をドラッグして移動します。";
+            if (map && map.dragging) map.dragging.enable();
+        } else {
+            hint.textContent = "地図上をなぞって範囲を囲んでください。";
+            if (map && map.dragging) map.dragging.disable();
+        }
+    }
+}
+
+function isDrawingMode() {
+    return currentMode === 'draw';
+}
+
+// --- Custom Drawing Logic ---
+let isDrawing = false;
+let drawnCoordinates = [];
+let currentPolyline = null;
+let currentPolygon = null;
+
+function startDraw(e) {
+    if (!isDrawingMode()) return;
+    isDrawing = true;
+
+    // Support both mouse and touch events
+    const latlng = e.latlng || (e.originalEvent && e.originalEvent.touches && e.originalEvent.touches[0] ? map.containerPointToLatLng([e.originalEvent.touches[0].clientX, e.originalEvent.touches[0].clientY]) : null);
+
+    if (!latlng) return;
+
+    drawnCoordinates = [latlng];
+
+    // Clear previous
+    if (currentPolyline) map.removeLayer(currentPolyline);
+    if (currentPolygon) map.removeLayer(currentPolygon);
+
+    currentPolyline = L.polyline(drawnCoordinates, { color: 'red' }).addTo(map);
+}
+
+function moveDraw(e) {
+    if (!isDrawing || !isDrawingMode()) return;
+
+    const latlng = e.latlng || (e.originalEvent && e.originalEvent.touches && e.originalEvent.touches[0] ? map.containerPointToLatLng([e.originalEvent.touches[0].clientX, e.originalEvent.touches[0].clientY]) : null);
+
+    if (!latlng) return;
+
+    drawnCoordinates.push(latlng);
+    currentPolyline.setLatLngs(drawnCoordinates);
+}
+
+function endDraw() {
+    if (!isDrawing) return;
+    isDrawing = false;
+
+    // Convert to Polygon for visualization
+    if (currentPolyline) map.removeLayer(currentPolyline);
+
+    currentPolygon = L.polygon(drawnCoordinates, {
+        color: '#ff4b4b',
+        fillColor: '#ff4b4b',
+        fillOpacity: 0.2
+    }).addTo(map);
+
+    // Trigger Search with the drawn polygon
+    searchSpots(currentPolygon);
 }
 
 // --- Search Logic (Ported from get_specialized_spots) ---
