@@ -140,8 +140,12 @@ function onTouchEnd(e) {
 // --- API Logic ---
 
 async function searchSpots() {
+    console.log("Starting searchSpots...");
+
     // Check if we have a valid search area
-    if (!currentPolygon) return;
+    if (!currentPolygon && !currentPin) {
+        return;
+    }
 
     const loader = document.getElementById('loader');
     loader.classList.remove('hidden');
@@ -160,63 +164,51 @@ async function searchSpots() {
     let queryParts = "";
 
     try {
-        // Use raw polygon but filter dense points to prevent query overflow
-        const latlngs = currentPolygon.getLatLngs()[0];
-        if (!latlngs || latlngs.length === 0) throw new Error("無効なエリアです");
+        let areaFilter = "";
 
-        // Filter: Keep point only if it's > 5m-10m away from the last one (approx 0.0001 deg)
-        // Also ensure we keep enough points to form a polygon
-        const filteredLatLngs = [latlngs[0]];
-        let lastPt = latlngs[0];
-        const distSqLimit = 0.00005 * 0.00005;
+        if (currentPin) {
+            // Radius Search
+            const ll = currentPin.getLatLng();
+            areaFilter = `(around:1000,${ll.lat},${ll.lng})`;
+        } else if (currentPolygon) {
+            // Polygon Search -> Switch to BBox for Stability
+            const latlngs = currentPolygon.getLatLngs()[0];
+            if (!latlngs || latlngs.length === 0) throw new Error("無効なエリアです");
 
-        for (let i = 1; i < latlngs.length; i++) {
-            const pt = latlngs[i];
-            const dLat = pt.lat - lastPt.lat;
-            const dLng = pt.lng - lastPt.lng;
-            if ((dLat * dLat + dLng * dLng) > distSqLimit) {
-                filteredLatLngs.push(pt);
-                lastPt = pt;
-            }
+            // Calculate Bounding Box
+            let minLat = 90, maxLat = -90, minLng = 180, maxLng = -180;
+            latlngs.forEach(ll => {
+                if (ll.lat < minLat) minLat = ll.lat;
+                if (ll.lat > maxLat) maxLat = ll.lat;
+                if (ll.lng < minLng) minLng = ll.lng;
+                if (ll.lng > maxLng) maxLng = ll.lng;
+            });
+
+            // Overpass BBox format: (south, west, north, east)
+            areaFilter = `(${minLat},${minLng},${maxLat},${maxLng})`;
+            console.log("Using BBox:", areaFilter);
         }
-        // Always close with the last point if it's different and we have enough points
-        if (filteredLatLngs.length < 3) {
-            // Fallback to raw if we filtered too much
-            // But raw might be too huge... let's just use raw if filtered is invalid
-            // Or better, just rely on the fact that 3 points are minimum.
-            // If drawing is tiny, raw usage is fine.
-            if (latlngs.length >= 3) {
-                // Reset to raw if filtered is too small but original wasn't
-                // Actually, if original is < 3, it's not a polygon.
-                // We'll just define 'pointsToUse'
-            }
-        }
-
-        const pointsToUse = (filteredLatLngs.length >= 3) ? filteredLatLngs : latlngs;
-
-        // Round to 5 decimal places (~1m precision) to save string length
-        const polyStr = pointsToUse.map(ll => `${ll.lat.toFixed(5)} ${ll.lng.toFixed(5)}`).join(' ');
 
         selectedCats.forEach(cat => {
             if (TOURISM_FILTERS[cat]) {
                 TOURISM_FILTERS[cat].forEach(q => {
-                    // Polygon Search
-                    queryParts += `${q}(poly:"${polyStr}");\n`;
+                    queryParts += `${q}${areaFilter};\n`;
                 });
             }
         });
 
+        // Use 'out center;' to keep it simple and light
         const overpassQuery = `
         [out:json][timeout:60];
         (
           ${queryParts}
         );
-        // Keep only named items
-        (._; >;);
-        out center body;
+        out center;
         `;
 
-        // 60 sec timeout for fetch (matching API)
+        console.log("Overpass Query constructed.");
+
+        // 60 sec timeout for fetch
         const controller = new AbortController();
         const timeoutId = setTimeout(() => controller.abort(), 60000);
 
@@ -228,21 +220,31 @@ async function searchSpots() {
 
         clearTimeout(timeoutId);
 
-        if (!response.ok) throw new Error("API Error: " + response.status);
+        if (!response.ok) {
+            throw new Error(`API Error: ${response.status}`);
+        }
 
         const data = await response.json();
         const elements = data.elements || [];
+
+        console.log("Found Elements:", elements.length);
 
         // Deduplicate and process
         const seen = new Set();
         allSpots = [];
 
         elements.forEach(el => {
-            if (el.tags && el.tags.name && !seen.has(el.tags.name)) {
-                seen.add(el.tags.name);
+            // Filter by ID to ensure uniqueness
+            if (!seen.has(el.id)) {
+                seen.add(el.id);
+
                 // Center calculation for ways/relations
                 const lat = el.lat || el.center?.lat;
                 const lon = el.lon || el.center?.lon;
+
+                // Optional: Check if point is actually inside polygon?
+                // For now, let's just return all in BBox to ensure User sees SOMETHING.
+                // Precision can be improved later if needed.
 
                 if (lat && lon) {
                     allSpots.push({
@@ -254,11 +256,13 @@ async function searchSpots() {
             }
         });
 
+        console.log("Processed Spots:", allSpots.length);
+
         displayResults(allSpots);
         document.getElementById('results-panel').classList.remove('hidden');
 
     } catch (e) {
-        console.error(e);
+        console.error("Search failed:", e);
         if (e.name === 'AbortError') {
             alert("検索がタイムアウトしました。範囲を狭めて試してください。");
         } else {
@@ -383,112 +387,7 @@ function onMapMouseUp(e) {
     // searchSpots();
 }
 
-// --- API Logic ---
 
-async function searchSpots(centerLatLng = null) {
-    // Check if we have a valid search area
-    if (!currentPolygon && !currentPin && !centerLatLng) return;
-
-    const loader = document.getElementById('loader');
-    loader.classList.remove('hidden');
-
-    // 1. Get Selected Categories
-    const checkboxes = document.querySelectorAll('#category-list input:checked');
-    const selectedCats = Array.from(checkboxes).map(cb => cb.value);
-
-    if (selectedCats.length === 0) {
-        alert("カテゴリを選択してください");
-        loader.classList.add('hidden');
-        return;
-    }
-
-    // 2. Build Query
-    let queryParts = "";
-
-    selectedCats.forEach(cat => {
-        if (TOURISM_FILTERS[cat]) {
-            TOURISM_FILTERS[cat].forEach(q => {
-                // Add spatial filter
-                const target = centerLatLng || currentPin;
-
-                if (target) {
-                    // Radius Search (around:1000, lat, lon)
-                    let lat, lng;
-                    if (typeof target.getLatLng === 'function') {
-                        const ll = target.getLatLng();
-                        lat = ll.lat;
-                        lng = ll.lng;
-                    } else {
-                        lat = target.lat;
-                        lng = target.lng;
-                    }
-                    queryParts += `${q}(around:1000,${lat},${lng});\n`;
-                } else if (currentPolygon) {
-                    // Polygon Search
-                    const latlngs = currentPolygon.getLatLngs()[0];
-                    const polyStr = latlngs.map(ll => `${ll.lat} ${ll.lng}`).join(' ');
-                    queryParts += `${q}(poly:"${polyStr}");\n`;
-                }
-            });
-        }
-    });
-
-    const overpassQuery = `
-    [out:json][timeout:60];
-    (
-      ${queryParts}
-    );
-    // Keep only named items
-    (._; >;);
-    out center body;
-    `;
-
-    try {
-        const response = await fetch("https://overpass.kumi.systems/api/interpreter", {
-            method: "POST",
-            body: "data=" + encodeURIComponent(overpassQuery)
-        });
-
-        if (!response.ok) throw new Error("API Error");
-
-        const data = await response.json();
-        const elements = data.elements || [];
-
-        // Deduplicate and process
-        const seen = new Set();
-        allSpots = [];
-
-        elements.forEach(el => {
-            if (el.tags && el.tags.name && !seen.has(el.tags.name)) {
-                seen.add(el.tags.name);
-                // Center calculation for ways/relations
-                const lat = el.lat || el.center?.lat;
-                const lon = el.lon || el.center?.lon;
-
-                if (lat && lon) {
-                    allSpots.push({
-                        ...el,
-                        lat: lat,
-                        lon: lon
-                    });
-                }
-            }
-        });
-
-        displayResults(allSpots);
-        document.getElementById('results-panel').classList.remove('hidden');
-
-    } catch (e) {
-        console.error(e);
-        if (e.name === 'AbortError') {
-            alert("検索がタイムアウトしました。範囲を狭めて試してください。");
-        } else {
-            alert("データ取得に失敗しました: " + e.message);
-        }
-    } finally {
-        loader.classList.add('hidden');
-    }
-}
 
 function displayResults(spots) {
     const list = document.getElementById('results-list');
