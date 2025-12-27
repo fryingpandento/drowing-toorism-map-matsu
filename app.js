@@ -77,7 +77,6 @@ function initMap() {
     map.on('mousedown', onMapMouseDown);
     map.on('mousemove', onMapMouseMove);
     map.on('mouseup', onMapMouseUp);
-    map.on('click', onMapClick);
 
     // Drawing Events (Touch for Mobile)
     const mapContainer = map.getContainer();
@@ -108,24 +107,6 @@ function onTouchEnd(e) {
     onMapMouseUp({});
 }
 
-function onMapClick(e) {
-    if (mode !== 'pin') return;
-
-    // Clear previous search area (just logic, no visual circle needed)
-    if (currentPin) {
-        currentPin = null;
-    }
-    if (currentPolygon) { map.removeLayer(currentPolygon); currentPolygon = null; }
-
-    // Store simple point for query logic
-    currentPin = e.latlng;
-
-    // Auto search on pin drop
-    searchSpots(e.latlng);
-
-    // On mobile, close sidebar if open
-    document.querySelector('.sidebar').classList.remove('open');
-}
 
 // ... (UI Init Code Unchanged) ...
 
@@ -135,23 +116,87 @@ function onMapClick(e) {
 // --- API Logic ---
 
 async function searchSpots() {
+    // Check if we have a valid search area
     if (!currentPolygon) return;
-
-    // Clear old markers
-    currentMarkers.forEach(m => map.removeLayer(m));
-    currentMarkers = [];
 
     const loader = document.getElementById('loader');
     loader.classList.remove('hidden');
 
-    // ... (Category and Query Logic Unchanged) ...
-    // Note: I need to verify if I can skip the middle part of this function in replace_file_content
-    // If not, I should use multi_replace or include the context.
-    // Since this is a big function, I will target specific blocks if possible, but the user asked for interaction which implies connecting list to map.
-    // I need to update 'displayResults' mostly.
+    // 1. Get Selected Categories
+    const checkboxes = document.querySelectorAll('#category-list input:checked');
+    const selectedCats = Array.from(checkboxes).map(cb => cb.value);
 
-    // Let's focus on changing the tile layer first, then the displayResults function.
-    // I will restart the tool call to do it in two chunks or one multi_replace.
+    if (selectedCats.length === 0) {
+        alert("カテゴリを選択してください");
+        loader.classList.add('hidden');
+        return;
+    }
+
+    // 2. Build Query
+    let queryParts = "";
+
+    selectedCats.forEach(cat => {
+        if (TOURISM_FILTERS[cat]) {
+            TOURISM_FILTERS[cat].forEach(q => {
+                // Polygon Search
+                const latlngs = currentPolygon.getLatLngs()[0];
+                const polyStr = latlngs.map(ll => `${ll.lat} ${ll.lng}`).join(' ');
+                queryParts += `${q}(poly:"${polyStr}");\n`;
+            });
+        }
+    });
+
+    const overpassQuery = `
+    [out:json][timeout:60];
+    (
+      ${queryParts}
+    );
+    // Keep only named items
+    (._; >;);
+    out center body;
+    `;
+
+    try {
+        const response = await fetch("https://overpass.kumi.systems/api/interpreter", {
+            method: "POST",
+            body: "data=" + encodeURIComponent(overpassQuery)
+        });
+
+        if (!response.ok) throw new Error("API Error");
+
+        const data = await response.json();
+        const elements = data.elements || [];
+
+        // Deduplicate and process
+        const seen = new Set();
+        allSpots = [];
+
+        elements.forEach(el => {
+            if (el.tags && el.tags.name && !seen.has(el.tags.name)) {
+                seen.add(el.tags.name);
+                // Center calculation for ways/relations
+                const lat = el.lat || el.center?.lat;
+                const lon = el.lon || el.center?.lon;
+
+                if (lat && lon) {
+                    allSpots.push({
+                        ...el,
+                        lat: lat,
+                        lon: lon
+                    });
+                }
+            }
+        });
+
+        displayResults(allSpots);
+        document.getElementById('results-panel').classList.remove('hidden');
+
+    } catch (e) {
+        console.error(e);
+        alert("データ取得に失敗しました。");
+    } finally {
+        loader.classList.add('hidden');
+    }
 }
 
 function initUI() {
@@ -181,7 +226,6 @@ function initUI() {
     // Mode Toggles
     document.getElementById('mode-pan').addEventListener('click', () => setMode('pan'));
     document.getElementById('mode-draw').addEventListener('click', () => setMode('draw'));
-    document.getElementById('mode-pin').addEventListener('click', () => setMode('pin'));
 
     // Mobile Menu Toggle
     document.getElementById('mobile-menu-btn').addEventListener('click', () => {
@@ -189,7 +233,7 @@ function initUI() {
     });
 
     // Search Button
-    document.getElementById('search-btn').addEventListener('click', () => searchSpots(null));
+    document.getElementById('search-btn').addEventListener('click', searchSpots);
 
     // Filtering inputs
     document.getElementById('filter-text').addEventListener('input', applyFilters);
@@ -208,14 +252,12 @@ function setMode(newMode) {
     mode = newMode;
     document.getElementById('mode-pan').classList.toggle('active', mode === 'pan');
     document.getElementById('mode-draw').classList.toggle('active', mode === 'draw');
-    document.getElementById('mode-pin').classList.toggle('active', mode === 'pin');
 
     // Update hint text
     const hint = document.getElementById('mode-hint');
     if (hint) {
         if (mode === 'pan') hint.textContent = "「移動」モード：地図をドラッグして移動します。";
         if (mode === 'draw') hint.textContent = "「描く」モード：地図上をドラッグしてエリアを囲んでください。";
-        if (mode === 'pin') hint.textContent = "「ピン」モード：地図をタップして周辺1kmを検索します。";
     }
 
     document.body.classList.remove('drawing-mode', 'pin-mode');
@@ -223,9 +265,6 @@ function setMode(newMode) {
     if (mode === 'draw') {
         document.body.classList.add('drawing-mode');
         map.dragging.disable();
-    } else if (mode === 'pin') {
-        document.body.classList.add('pin-mode');
-        map.dragging.enable();
     } else {
         map.dragging.enable();
     }
