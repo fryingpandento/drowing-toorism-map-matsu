@@ -233,28 +233,49 @@ select {
         flex-direction: column;
     }
 
+    /* Bottom Sheet Sidebar */
     #sidebar {
+        position: fixed;
+        bottom: 0;
+        left: 0;
         width: 100%;
-        height: auto;
-        /* Allow sidebar to expand but not take whole screen initially */
-        max-height: 40vh;
-        order: 2;
-        /* Simply stack */
-        display: flex;
-        /* Ensure it's visible on mobile for now */
+        height: 60px;
+        /* Minimized height */
+        max-height: 80vh;
+        background-color: var(--sidebar-bg);
+        z-index: 2000;
+        border-top: 1px solid #ccc;
+        border-radius: 15px 15px 0 0;
+        box-shadow: 0 -2px 10px rgba(0, 0, 0, 0.1);
+        transition: height 0.3s ease-out;
+        overflow-y: hidden;
+        /* Hide content when minimized */
+        display: block;
+        /* Override flex */
+        padding-top: 10px;
+        /* Space for handle */
     }
 
-    /* Simple mobile fix: Make sidebar togglable or just stack */
-    #sidebar {
-        display: flex;
-        height: 35%;
-        width: 100%;
-        order: 2;
+    #sidebar.expanded {
+        height: 70vh;
+        overflow-y: auto;
+    }
+
+    /* Drag Handle */
+    #sidebar-handle {
+        width: 40px;
+        height: 5px;
+        background-color: #ccc;
+        border-radius: 3px;
+        margin: 0 auto 15px auto;
+        cursor: pointer;
     }
 
     #main-content {
+        height: 100%;
+        /* Full height, map behind sidebar */
+        width: 100%;
         order: 1;
-        height: 65%;
     }
 
     #results-panel {

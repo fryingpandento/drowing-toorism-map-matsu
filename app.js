@@ -162,6 +162,18 @@ function initUI() {
             }
         });
     }
+
+    // Mobile Bottom Sheet Toggle
+    const sidebarHandle = document.getElementById('sidebar-handle');
+    const sidebar = document.getElementById('sidebar');
+    if (sidebarHandle && sidebar) {
+        sidebarHandle.addEventListener('click', () => {
+            sidebar.classList.toggle('expanded');
+        });
+
+        // Optional: Close when clicking map (simple UX rule)
+        // If map is clicked, we might want to collapse sidebar if expanded
+    }
 }
 
 // --- Mode Management ---
