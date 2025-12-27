@@ -438,10 +438,19 @@ async function searchSpots(layer) {
             const lon = el.lon || (el.center && el.center.lon);
 
             if (lat && lon) {
-                // Calculate Distance
-                const dist = map.distance(searchCenter, [lat, lon]);
+                try {
+                    // Safe Robust Distance Calculation
+                    const latNum = Number(lat);
+                    const lonNum = Number(lon);
+                    const point = L.latLng(latNum, lonNum);
 
-                allSpots.push({ ...el, lat, lon, distance: dist });
+                    // Use LatLng.distanceTo instead of map.distance for safety
+                    const dist = searchCenter.distanceTo(point);
+
+                    allSpots.push({ ...el, lat: latNum, lon: lonNum, distance: dist });
+                } catch (err) {
+                    console.warn("Skipping invalid spot:", err);
+                }
             }
         });
 
@@ -608,3 +617,49 @@ function applyFilters() {
 
     document.getElementById('result-count').textContent = count;
 }
+// --- Geolocation ---
+function initGeolocation() {
+    const btn = document.getElementById('locate-btn');
+    if (!btn) return;
+
+    btn.addEventListener('click', () => {
+        // Request location
+        map.locate({ setView: true, maxZoom: 16 });
+        btn.innerHTML = "⏳";
+    });
+
+    // Valid location found
+    map.on('locationfound', (e) => {
+        const radius = e.accuracy;
+        btn.innerHTML = "📍";
+
+        // Clear previous
+        if (window.currentLocMarker) map.removeLayer(window.currentLocMarker);
+        if (window.currentLocCircle) map.removeLayer(window.currentLocCircle);
+
+        window.currentLocMarker = L.marker(e.latlng).addTo(map)
+            .bindPopup(`現在地 (精度: ${Math.round(radius)}m)`).openPopup();
+
+        window.currentLocCircle = L.circle(e.latlng, radius).addTo(map);
+    });
+
+    // Error
+    map.on('locationerror', (e) => {
+        alert("位置情報を取得できませんでした: " + e.message);
+        btn.innerHTML = "📍";
+    });
+}
+
+// Call on load
+document.addEventListener('DOMContentLoaded', () => {
+    // Assuming initMap is called via script or elsewhere, we can wait or call initGeolocation
+    // Since initMap is async or simple, let's just wait a bit or hook into it.
+    // But initMap is usually called by onload or script.
+
+    // Let's hook it safely
+    setTimeout(() => {
+        if (typeof map !== 'undefined') {
+            initGeolocation();
+        }
+    }, 1000);
+});
