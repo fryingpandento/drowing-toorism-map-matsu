@@ -73,11 +73,39 @@ function initMap() {
         maxZoom: 19
     }).addTo(map);
 
-    // Drawing Events
+    // Drawing Events (Mouse)
     map.on('mousedown', onMapMouseDown);
     map.on('mousemove', onMapMouseMove);
     map.on('mouseup', onMapMouseUp);
     map.on('click', onMapClick);
+
+    // Drawing Events (Touch for Mobile)
+    const mapContainer = map.getContainer();
+    mapContainer.addEventListener('touchstart', onTouchStart, { passive: false });
+    mapContainer.addEventListener('touchmove', onTouchMove, { passive: false });
+    mapContainer.addEventListener('touchend', onTouchEnd);
+}
+
+// --- Touch Handling ---
+function onTouchStart(e) {
+    if (mode !== 'draw') return;
+    e.preventDefault(); // Prevent scrolling
+    const touch = e.touches[0];
+    const latlng = map.mouseEventToLatLng(touch);
+    onMapMouseDown({ latlng: latlng });
+}
+
+function onTouchMove(e) {
+    if (mode !== 'draw' || !isDrawing) return;
+    e.preventDefault(); // Prevent scrolling
+    const touch = e.touches[0];
+    const latlng = map.mouseEventToLatLng(touch);
+    onMapMouseMove({ latlng: latlng });
+}
+
+function onTouchEnd(e) {
+    if (mode !== 'draw') return;
+    onMapMouseUp({});
 }
 
 function onMapClick(e) {
@@ -85,13 +113,11 @@ function onMapClick(e) {
 
     // Clear previous search area (just logic, no visual circle needed)
     if (currentPin) {
-        // map.removeLayer(currentPin); // No circle to remove anymore
         currentPin = null;
     }
     if (currentPolygon) { map.removeLayer(currentPolygon); currentPolygon = null; }
 
-    // We used to draw a circle here. Now we just search.
-    // Store simple point for query logic (simulating the pin object for searchSpots)
+    // Store simple point for query logic
     currentPin = e.latlng;
 
     // Auto search on pin drop
