@@ -268,7 +268,7 @@ select {
         height: 5px;
         background-color: #ccc;
         border-radius: 3px;
-        margin: 5px auto 15px auto;
+        margin: 5px auto 5px auto;
         cursor: pointer;
         padding: 10px 0;
         /* Increase touch area */
