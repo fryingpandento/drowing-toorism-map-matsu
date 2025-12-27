@@ -290,6 +290,11 @@ input[type=range]::-moz-range-track {
     border-color: #ff4b4b;
 }
 
+/* Sidebar Close Button (Default Hidden) */
+#sidebar-close-btn {
+    display: none;
+}
+
 /* Mobile Responsive */
 @media (max-width: 768px) {
     #app-container {
@@ -333,9 +338,29 @@ input[type=range]::-moz-range-track {
         background-clip: content-box;
     }
 
+    /* Show and Enlarge Close Button on Mobile */
+    #sidebar-close-btn {
+        display: flex;
+        position: absolute;
+        top: 15px;
+        right: 15px;
+        width: 50px;
+        height: 50px;
+        background: #f0f0f0;
+        border: none;
+        border-radius: 50%;
+        font-size: 30px;
+        line-height: 1;
+        color: #666;
+        cursor: pointer;
+        z-index: 10;
+        align-items: center;
+        justify-content: center;
+    }
+
     /* Sidebar Header */
     #sidebar h1 {
-        padding-right: 40px;
+        padding-right: 60px;
         /* Room for close button */
         font-size: 1.2rem;
     }
