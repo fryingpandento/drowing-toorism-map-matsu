@@ -143,9 +143,10 @@ function initUI() {
     });
 
     // Close Results
-    document.getElementById('close-results').addEventListener('click', () => {
-        document.getElementById('results-panel').classList.add('hidden');
-    });
+    // Close Results (Removed: results are now part of sidebar)
+    // document.getElementById('close-results').addEventListener('click', () => {
+    //     document.getElementById('results-panel').classList.add('hidden');
+    // });
 
     // Filters (Client-side)
     const applyFiltersBound = () => applyFilters(); // Function defined below
@@ -438,15 +439,16 @@ async function searchSpots(layer) {
 }
 
 function displayResults(spots) {
-    const panel = document.getElementById('results-panel');
+    // const panel = document.getElementById('results-panel'); // Removed
     const list = document.getElementById('results-list');
     const countSpan = document.getElementById('result-count');
 
-    panel.classList.remove('hidden');
+    // panel.classList.remove('hidden'); // Removed
     list.innerHTML = "";
     countSpan.textContent = spots.length;
 
     if (spots.length === 0) {
+        list.className = ""; // Reset class
         list.innerHTML = "<p>見つかりませんでした。</p>";
         return;
     }
@@ -454,6 +456,11 @@ function displayResults(spots) {
     spots.forEach(spot => {
         createCard(spot, list);
     });
+
+    // Auto-scroll sidebar to results on mobile?
+    // Not strictly necessary if results affect height, but user might want to see them.
+    // Ideally, we might want to ensure the sidebar is expanded if results are found?
+    // But user might want to see map. Let's keep it simple: just populate.
 }
 
 function createCard(spot, container) {
@@ -516,6 +523,12 @@ function createCard(spot, container) {
             .setLatLng([spot.lat, spot.lon])
             .setContent(`<b>${name}</b>`)
             .openOn(map);
+
+        // Auto-collapse sidebar on mobile to show map
+        if (window.innerWidth <= 768) {
+            const sidebar = document.getElementById('sidebar');
+            if (sidebar) sidebar.classList.remove('expanded');
+        }
     });
 
     container.appendChild(card);

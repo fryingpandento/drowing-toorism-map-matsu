@@ -152,70 +152,17 @@ input[type=range]::-moz-range-track {
     height: 100%;
 }
 
-/* Results Panel (Floating/Overlay like Streamlit columns somewhat, but better for web) */
-#results-panel {
-    position: absolute;
-    top: 20px;
-    right: 20px;
-    bottom: 20px;
-    width: 350px;
-    background: rgba(255, 255, 255, 0.95);
-    backdrop-filter: blur(10px);
-    border-radius: 8px;
-    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.15);
-    display: flex;
-    flex-direction: column;
-    z-index: 999;
-    border: 1px solid #eee;
-    transition: transform 0.3s ease;
-}
+/* Results Panel (Legacy style removed, now integrated in sidebar) */
+/*
+#results-panel { ... }
+#results-panel.hidden { ... }
+*/
 
-#results-panel.hidden {
-    transform: translateX(110%);
-    display: none;
-    /* Actually hide it to prevent interaction */
-}
-
-.results-header {
-    padding: 15px;
-    border-bottom: 1px solid #eee;
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-}
-
-#close-results {
-    background: none;
-    border: none;
-    font-size: 1.5rem;
-    cursor: pointer;
-    color: #666;
-}
-
-.filter-controls {
-    padding: 10px 15px;
-    background: #f9f9f9;
-    border-bottom: 1px solid #eee;
-}
-
-#filter-text {
-    width: 100%;
-    padding: 8px;
-    margin-bottom: 8px;
-    border: 1px solid #ddd;
-    border-radius: 4px;
-}
-
-.filter-checks {
-    display: flex;
-    gap: 10px;
-    font-size: 0.8rem;
-}
-
+/* Results List within Sidebar */
 #results-list {
-    flex: 1;
-    overflow-y: auto;
-    padding: 15px;
+    /* flex: 1; Removed to allow natural flow */
+    /* overflow-y: auto; Removed to use sidebar scroll */
+    padding: 0 5px;
 }
 
 /* Cards */

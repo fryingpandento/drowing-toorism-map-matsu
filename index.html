@@ -9,7 +9,7 @@
     <!-- Leaflet CSS -->
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" crossorigin="" />
 
-    <link rel="stylesheet" href="style.css?v=SLIDER">
+    <link rel="stylesheet" href="style.css?v=UNIFIED">
 
     <!-- Mobile Debugging: Global Error Handler -->
     <script>
@@ -78,38 +78,43 @@
             </div>
 
             <div id="status-msg"></div>
-        </div>
 
-        <div id="main-content">
-            <div id="map"></div>
-
-            <div id="results-panel" class="hidden">
-                <div class="results-header">
-                    <h2>🔎 探索結果 (<span id="result-count">0</span>)</h2>
-                    <button id="close-results">×</button>
+            <!-- Results Section (Unified) -->
+            <div id="results-section" style="margin-top: 20px; border-top: 1px solid #ddd; padding-top: 10px;">
+                <div class="results-header"
+                    style="padding: 10px 0; display:flex; justify-content:space-between; align-items:center;">
+                    <h2 style="font-size:1.1rem; margin:0;">🔎 探索結果 (<span id="result-count">0</span>)</h2>
                 </div>
 
-                <div class="filter-controls">
-                    <input type="text" id="filter-text" placeholder="名前で絞り込み (例: 神社)...">
-                    <div class="filter-checks">
-                        <label><input type="checkbox" id="filter-web"> 公式HPあり</label>
+                <div class="filter-controls"
+                    style="background:#f9f9f9; padding:10px; border-radius:8px; margin-bottom:10px;">
+                    <input type="text" id="filter-text" placeholder="名前で絞り込み..."
+                        style="width:100%; padding:8px; border:1px solid #ddd; border-radius:4px; margin-bottom:5px;">
+                    <div class="filter-checks" style="font-size:0.85rem; display:flex; flex-wrap:wrap; gap:10px;">
+                        <label><input type="checkbox" id="filter-web"> HPあり</label>
                         <label><input type="checkbox" id="filter-wiki"> Wikiあり</label>
-                        <label><input type="checkbox" id="filter-hours"> 時間情報あり</label>
+                        <label><input type="checkbox" id="filter-hours"> 時間情報</label>
                     </div>
                 </div>
 
                 <div id="results-list">
                     <!-- Cards injected by JS -->
-                    <div class="placeholder">検索結果がここに表示されます</div>
+                    <div class="placeholder" style="color:#666; text-align:center;">検索結果がここに表示されます</div>
                 </div>
             </div>
         </div>
+
+        <div id="main-content">
+            <div id="map"></div>
+            <!-- Old results panel removed -->
+        </div>
+    </div>
     </div>
 
     <!-- Leaflet JS -->
     <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" crossorigin=""></script>
 
-    <script src="app.js?v=SLIDER"></script>
+    <script src="app.js?v=UNIFIED"></script>
 </body>
 
 </html>
