@@ -163,7 +163,14 @@ async function searchSpots() {
         const rawLatLngs = currentPolygon.getLatLngs()[0];
         if (!rawLatLngs || rawLatLngs.length === 0) throw new Error("無効なエリアです");
 
-        const simplifiedLatLngs = simplifyLatLngs(rawLatLngs, 0.0001); // Approx 10m
+        // Use much finer tolerance (0.00001 is approx 1m) to preserve shape of small areas
+        let simplifiedLatLngs = simplifyLatLngs(rawLatLngs, 0.00001);
+
+        // If simplification destroys the polygon (too few points), use raw
+        if (simplifiedLatLngs.length < 3) {
+            simplifiedLatLngs = rawLatLngs;
+        }
+
         const polyStr = simplifiedLatLngs.map(ll => `${ll.lat} ${ll.lng}`).join(' ');
 
         selectedCats.forEach(cat => {
