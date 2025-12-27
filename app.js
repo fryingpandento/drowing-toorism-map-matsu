@@ -171,10 +171,19 @@ function initUI() {
 
     // Mobile Bottom Sheet Toggle
     const sidebarHandle = document.getElementById('sidebar-handle');
+    const sidebarCloseBtn = document.getElementById('sidebar-close-btn');
     const sidebar = document.getElementById('sidebar');
-    const header = document.querySelector('#sidebar h1'); // Select the H1
+    const header = document.querySelector('#sidebar h1');
 
     if (sidebar) {
+        // Explicit Close Button
+        if (sidebarCloseBtn) {
+            sidebarCloseBtn.addEventListener('click', (e) => {
+                sidebar.classList.remove('expanded');
+                e.stopPropagation(); // Don't bubble to sidebar click (which opens it)
+            });
+        }
+
         sidebar.addEventListener('click', (e) => {
             // If dragging slider or clicking interactive elements, don't toggle
             if (e.target.tagName === 'INPUT' || e.target.tagName === 'SELECT' || e.target.tagName === 'BUTTON' || e.target.tagName === 'A' || e.target.tagName === 'LABEL') {
@@ -625,13 +634,13 @@ function initGeolocation() {
     btn.addEventListener('click', () => {
         // Request location
         map.locate({ setView: true, maxZoom: 16 });
-        btn.innerHTML = "⏳";
+        btn.innerHTML = "⏳ 取得中...";
     });
 
     // Valid location found
     map.on('locationfound', (e) => {
         const radius = e.accuracy;
-        btn.innerHTML = "📍";
+        btn.innerHTML = "📍 現在地";
 
         // Clear previous
         if (window.currentLocMarker) map.removeLayer(window.currentLocMarker);
@@ -646,7 +655,7 @@ function initGeolocation() {
     // Error
     map.on('locationerror', (e) => {
         alert("位置情報を取得できませんでした: " + e.message);
-        btn.innerHTML = "📍";
+        btn.innerHTML = "📍 現在地";
     });
 }
 

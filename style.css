@@ -308,17 +308,20 @@ input[type=range]::-moz-range-track {
     }
 }
 
-/* Locate Button (Default) */
+/* Locate Button (Pill Shape) */
 #locate-btn {
     position: fixed;
     bottom: 30px;
-    right: 30px;
-    width: 60px;
-    height: 60px;
+    right: 20px;
+    width: auto;
+    height: 50px;
+    padding: 0 20px;
     background: white;
     border: 2px solid #ddd;
-    border-radius: 50%;
-    font-size: 30px;
+    border-radius: 30px;
+    font-size: 16px;
+    font-weight: bold;
+    color: #333;
     display: flex;
     align-items: center;
     justify-content: center;
@@ -329,7 +332,48 @@ input[type=range]::-moz-range-track {
 }
 
 #locate-btn:active {
-    transform: scale(0.9);
+    transform: scale(0.95);
+}
+
+/* Sidebar Close Button */
+#sidebar-close-btn {
+    position: absolute;
+    top: 10px;
+    right: 15px;
+    width: 36px;
+    height: 36px;
+    background: #f0f0f0;
+    border: none;
+    border-radius: 50%;
+    font-size: 24px;
+    line-height: 1;
+    color: #666;
+    cursor: pointer;
+    z-index: 10;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+@media (max-width: 768px) {
+    #sidebar h1 {
+        padding-right: 40px;
+        /* Make room for close button */
+        font-size: 1.2rem;
+    }
+
+    #locate-btn {
+        bottom: 100px !important;
+        right: 20px !important;
+        font-size: 14px;
+        height: 44px;
+    }
+
+    /* Make handle more obvious */
+    #sidebar-handle {
+        background-color: #ccc;
+        width: 80px;
+    }
 }
 
 position: fixed;
