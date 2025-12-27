@@ -469,10 +469,13 @@ function displayResults(spots) {
         createCard(spot, list);
     });
 
-    // Auto-scroll sidebar to results on mobile?
-    // Not strictly necessary if results affect height, but user might want to see them.
-    // Ideally, we might want to ensure the sidebar is expanded if results are found?
-    // But user might want to see map. Let's keep it simple: just populate.
+    // Auto-expand sidebar on mobile when results are found
+    if (window.innerWidth <= 768) {
+        const sidebar = document.getElementById('sidebar');
+        if (sidebar && !sidebar.classList.contains('expanded')) {
+            sidebar.classList.add('expanded');
+        }
+    }
 }
 
 function createCard(spot, container) {
