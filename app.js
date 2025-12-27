@@ -174,14 +174,26 @@ function initUI() {
     const sidebar = document.getElementById('sidebar');
     const header = document.querySelector('#sidebar h1'); // Select the H1
 
-    if (sidebar && (sidebarHandle || header)) {
-        const toggleSidebar = () => {
-            sidebar.classList.toggle('expanded');
-        };
+    if (sidebar) {
+        sidebar.addEventListener('click', (e) => {
+            // If dragging slider or clicking interactive elements, don't toggle
+            if (e.target.tagName === 'INPUT' || e.target.tagName === 'SELECT' || e.target.tagName === 'BUTTON' || e.target.tagName === 'A' || e.target.tagName === 'LABEL') {
+                return;
+            }
 
-        if (sidebarHandle) sidebarHandle.addEventListener('click', toggleSidebar);
-        // Also toggle when clicking the title (easier target)
-        if (header) header.addEventListener('click', toggleSidebar);
+            // Expanded: Click only handle/header to close
+            if (sidebar.classList.contains('expanded')) {
+                const isHandle = e.target === sidebarHandle || e.target.closest('#sidebar-handle');
+                const isHeader = e.target.tagName === 'H1' || e.target.closest('h1');
+                if (isHandle || isHeader) {
+                    sidebar.classList.remove('expanded');
+                }
+            }
+            // Collapsed: Click ANYWHERE to open
+            else {
+                sidebar.classList.add('expanded');
+            }
+        });
     }
 }
 
