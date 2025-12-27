@@ -245,6 +245,31 @@ function endDraw() {
     }
 }
 
+// Point Search handler (called by initMap click/tap)
+function onPointSearch(e) {
+    if (currentMode !== 'radius') return;
+
+    const center = e.latlng;
+
+    // Clear previous
+    if (currentPolygon) map.removeLayer(currentPolygon);
+
+    // Create a 3km radius circle (approx) for visualization
+    const radiusMeters = 3000;
+
+    const circle = L.circle(center, {
+        radius: radiusMeters,
+        color: '#ff4b4b',
+        fillColor: '#ff4b4b',
+        fillOpacity: 0.2
+    }).addTo(map);
+
+    currentPolygon = circle; // Track it to remove later
+
+    // Circle support in searchSpots needs to just grab BBox (which works for all layers)
+    searchSpots(circle);
+}
+
 // --- Search Logic (Ported from get_specialized_spots) ---
 async function searchSpots(layer) {
     const statusMsg = document.getElementById('status-msg');
