@@ -449,7 +449,60 @@ async function searchSpots(centerLatLng = null) {
 
     } catch (e) {
         console.error(e);
-        alert("データ取得に失敗しました。");
+        if (e.name === 'AbortError') {
+            alert("検索がタイムアウトしました。範囲を狭めて試してください。");
+        } else {
+            alert("データ取得に失敗しました: " + e.message);
+        }
+    } finally {
+        loader.classList.add('hidden');
+    }
+}
+
+function displayResults(spots) {
+    const list = document.getElementById('results-list');
+    list.innerHTML = "";
+
+    document.getElementById('result-count').textContent = spots.length;
+
+    if (spots.length === 0) {
+        list.innerHTML = "<p style='text-align:center; padding:20px; color:#666;'>見つかりませんでした。</p>";
+        return;
+    }
+
+    // Clear existing markers (though markers are disabled by default now, we clear any leftovers)
+    currentMarkers.forEach(m => map.removeLayer(m));
+    currentMarkers = [];
+
+    spots.forEach((spot, index) => {
+        const name = spot.tags.name;
+        // Determine subtype
+        let subtype = "スポット";
+        if (spot.tags.amenity) subtype = spot.tags.amenity;
+        else if (spot.tags.historic) subtype = spot.tags.historic;
+        else if (spot.tags.tourism) subtype = spot.tags.tourism;
+
+        // Details
+        const details = [];
+        if (spot.tags.wikipedia) details.push("📖 Wiki");
+        if (spot.tags.website) details.push("🔗 HP");
+        if (spot.tags.opening_hours) details.push("🕒 時間");
+
+        const googleUrl = `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(name + " 観光")}`;
+
+        // Create Card
+        const card = document.createElement('div');
+        card.className = "spot-card";
+        card.id = `card-${index}`;
+        card.innerHTML = `
+            <div class="spot-title">${name}</div>
+            <div class="spot-meta">
+                <span class="spot-tag">${subtype}</span>
+                <span class="spot-details">${details.join(' ')}</span>
+            </div>
+            <a href="${googleUrl}" target="_blank" class="google-btn">🌏 GoogleMap</a>
+        `;
+
         // Interaction: Click card to pan to map and show pin
         card.addEventListener('click', (e) => {
             if (e.target.tagName === 'A') return; // Ignore link clicks
