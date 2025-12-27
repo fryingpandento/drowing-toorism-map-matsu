@@ -12,29 +12,30 @@
     <!-- Leaflet Draw CSS -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet.draw/1.0.4/leaflet.draw.css" />
 
-    <link rel="stylesheet" href="style.css">
+    <link rel="stylesheet" href="style.css?v=FIX2">
 </head>
 
 <body>
     <div id="app-container">
         <div id="sidebar">
-            <h1>🗾 観光スポット探索</h1>
+            <h1>🗾 観光スポット探索 v2</h1>
 
-            <div class="control-group">
-                <label for="region-select">📍 地方を選択 (初期位置)</label>
-                <select id="region-select"></select>
-            </div>
-
-            <!-- Mode Toggle (Hardcoded for stability) -->
-            <div class="control-group">
-                <label>操作モード</label>
+            <!-- Mode Toggle (Moved to Top for Visibility) -->
+            <div class="control-group"
+                style="margin-bottom: 15px; background: #eef; padding: 10px; border-radius: 8px;">
+                <label>① 操作モード</label>
                 <div style="display:flex; gap:10px;">
-                    <button id="mode-pan" class="mode-btn active">移動</button>
+                    <button id="mode-pan" class="mode-btn active">✋ 移動</button>
                     <button id="mode-draw" class="mode-btn">✏️ 描く</button>
                 </div>
                 <p id="mode-hint" style="font-size:0.8em; color:#666; margin-top:5px;">
                     地図をドラッグして移動します。
                 </p>
+            </div>
+
+            <div class="control-group">
+                <label for="region-select">② 地方を選択 (初期位置)</label>
+                <select id="region-select"></select>
             </div>
 
             <p class="description">
@@ -83,7 +84,7 @@
     <!-- Leaflet Draw JS -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet.draw/1.0.4/leaflet.draw.js"></script>
 
-    <script src="app.js"></script>
+    <script src="app.js?v=FIX2"></script>
 </body>
 
 </html>
