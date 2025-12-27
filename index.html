@@ -9,7 +9,7 @@
     <!-- Leaflet CSS -->
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" crossorigin="" />
 
-    <link rel="stylesheet" href="style.css?v=UNIFIED">
+    <link rel="stylesheet" href="style.css?v=HYBRID">
 
     <!-- Mobile Debugging: Global Error Handler -->
     <script>
@@ -80,9 +80,9 @@
             <div id="status-msg"></div>
 
             <!-- Results Section (Unified) -->
-            <div id="results-section" style="margin-top: 20px; border-top: 1px solid #ddd; padding-top: 10px;">
-                <div class="results-header"
-                    style="padding: 10px 0; display:flex; justify-content:space-between; align-items:center;">
+            <!-- Results Section (Unified via CSS Hybrid) -->
+            <div id="results-section">
+                <div class="results-header">
                     <h2 style="font-size:1.1rem; margin:0;">🔎 探索結果 (<span id="result-count">0</span>)</h2>
                 </div>
 
@@ -114,7 +114,7 @@
     <!-- Leaflet JS -->
     <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" crossorigin=""></script>
 
-    <script src="app.js?v=UNIFIED"></script>
+    <script src="app.js?v=HYBRID"></script>
 </body>
 
 </html>
