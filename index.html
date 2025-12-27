@@ -13,6 +13,20 @@
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet.draw/1.0.4/leaflet.draw.css" />
 
     <link rel="stylesheet" href="style.css?v=KANTO">
+
+    <!-- Mobile Debugging: Global Error Handler -->
+    <script>
+        window.onerror = function (msg, url, lineNo, columnNo, error) {
+            const string = msg.toLowerCase();
+            const substring = "script error";
+            if (string.indexOf(substring) > -1) {
+                alert('Script Error: See Console for details');
+            } else {
+                alert(msg + '\nURL: ' + url + '\nLine: ' + lineNo + '\nColumn: ' + columnNo + '\nError object: ' + JSON.stringify(error));
+            }
+            return false;
+        };
+    </script>
 </head>
 
 <body>
