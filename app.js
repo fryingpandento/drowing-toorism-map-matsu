@@ -60,11 +60,11 @@ document.addEventListener('DOMContentLoaded', () => {
 });
 
 function initMap() {
-    // 1. Initialize Map (Kyoto Default)
+    // 1. Initialize Map (Kanto Default)
     map = L.map('map', {
         dragging: true, // Default enabled
         tap: true
-    }).setView([34.9858, 135.7588], 13);
+    }).setView([35.6895, 139.6917], 10);
 
     // 2. Tile Layer (OSM)
     L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png', {
@@ -112,6 +112,7 @@ function initUI() {
         const option = document.createElement('option');
         option.value = key;
         option.textContent = key;
+        if (key === "関東 (東京)") option.selected = true;
         regionSelect.appendChild(option);
     });
 
