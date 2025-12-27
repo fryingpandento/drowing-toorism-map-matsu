@@ -55,6 +55,7 @@ let isDrawing = false;
 let drawnCoordinates = [];
 let allSpots = []; // Store fetched spots for client-side filtering
 let currentMarkers = []; // Store map markers
+let selectedMarker = null; // Single marker for the selected result
 
 // --- Initialization ---
 document.addEventListener('DOMContentLoaded', () => {
@@ -449,7 +450,7 @@ async function searchSpots(centerLatLng = null) {
     } catch (e) {
         console.error(e);
         alert("データ取得に失敗しました。");
-        // Interaction: Click card to pan to map
+        // Interaction: Click card to pan to map and show pin
         card.addEventListener('click', (e) => {
             if (e.target.tagName === 'A') return; // Ignore link clicks
 
@@ -457,15 +458,21 @@ async function searchSpots(centerLatLng = null) {
             document.querySelectorAll('.spot-card').forEach(c => c.style.borderLeftColor = '#ff4b4b');
             card.style.borderLeftColor = '#0066ff';
 
-            // Move map to spot location (Markers are disabled)
+            // Remove previous selection marker if any
+            if (selectedMarker) {
+                map.removeLayer(selectedMarker);
+            }
+
+            // Move map and add temporary marker
             map.setView([spot.lat, spot.lon], 16);
+
+            selectedMarker = L.marker([spot.lat, spot.lon])
+                .addTo(map)
+                .bindPopup(`<b>${name}</b><br>${subtype}`)
+                .openPopup();
         });
 
         list.appendChild(card);
-
-        // Map Markers are disabled per user request
-        // const marker = L.marker([spot.lat, spot.lon]).addTo(map).bindPopup(`<b>${name}</b><br>${subtype}`);
-        // currentMarkers.push(marker);
     });
 }
 
