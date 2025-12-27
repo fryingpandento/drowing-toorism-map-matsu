@@ -210,6 +210,23 @@ select {
     font-size: 0.9em;
 }
 
+/* Mode Buttons */
+.mode-btn {
+    flex: 1;
+    padding: 8px;
+    border: 1px solid #ccc;
+    background: #fff;
+    cursor: pointer;
+    border-radius: 4px;
+    font-weight: bold;
+}
+
+.mode-btn.active {
+    background: #ff4b4b;
+    color: white;
+    border-color: #ff4b4b;
+}
+
 /* Mobile Responsive */
 @media (max-width: 768px) {
     #app-container {
@@ -219,25 +236,25 @@ select {
     #sidebar {
         width: 100%;
         height: auto;
-        max-height: 25vh;
+        /* Allow sidebar to expand but not take whole screen initially */
+        max-height: 40vh;
         order: 2;
-        /* Map on top? Or sidebar on top? Let's put Sidebar on bottom or toggle */
-        /* Actually simpler: Sidebar is top/bottom or hidden. */
-        display: none;
-        /* For now, let's just checking desktop capability first as per port */
+        /* Simply stack */
+        display: flex;
+        /* Ensure it's visible on mobile for now */
     }
 
     /* Simple mobile fix: Make sidebar togglable or just stack */
     #sidebar {
         display: flex;
-        height: 30%;
+        height: 35%;
         width: 100%;
         order: 2;
     }
 
     #main-content {
         order: 1;
-        height: 70%;
+        height: 65%;
     }
 
     #results-panel {
