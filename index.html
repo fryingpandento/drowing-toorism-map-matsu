@@ -9,7 +9,7 @@
     <!-- Leaflet CSS -->
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" crossorigin="" />
 
-    <link rel="stylesheet" href="style.css?v=LAYOUT">
+    <link rel="stylesheet" href="style.css?v=OPEN">
 
     <!-- Mobile Debugging: Global Error Handler -->
     <script>
@@ -28,7 +28,8 @@
 
 <body>
     <div id="app-container">
-        <div id="sidebar">
+        <!-- Sidebar starts expanded on mobile -->
+        <div id="sidebar" class="expanded">
             <div id="sidebar-handle"></div>
             <h1>🗾 観光スポット探索 v2</h1>
 
@@ -108,7 +109,7 @@
     <!-- Leaflet JS -->
     <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" crossorigin=""></script>
 
-    <script src="app.js?v=LAYOUT"></script>
+    <script src="app.js?v=OPEN"></script>
 </body>
 
 </html>
