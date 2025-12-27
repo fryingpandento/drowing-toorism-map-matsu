@@ -65,6 +65,62 @@ select {
     border: 1px solid #ccc;
 }
 
+/* Custom Range Slider Styles */
+input[type=range] {
+    -webkit-appearance: none;
+    width: 100%;
+    margin: 10px 0;
+    background: transparent;
+}
+
+input[type=range]:focus {
+    outline: none;
+}
+
+/* Chrome/Safari/Edge Thumb */
+input[type=range]::-webkit-slider-thumb {
+    -webkit-appearance: none;
+    height: 28px;
+    /* Big touch target */
+    width: 28px;
+    border-radius: 50%;
+    background: #ff4b4b;
+    cursor: pointer;
+    margin-top: -10px;
+    /* Aligns vertically with track */
+    box-shadow: 0 2px 5px rgba(0, 0, 0, 0.3);
+    border: 2px solid #fff;
+}
+
+/* Firefox Thumb */
+input[type=range]::-moz-range-thumb {
+    height: 28px;
+    width: 28px;
+    border-radius: 50%;
+    background: #ff4b4b;
+    cursor: pointer;
+    box-shadow: 0 2px 5px rgba(0, 0, 0, 0.3);
+    border: 2px solid #fff;
+}
+
+/* Chrome/Safari/Edge Track */
+input[type=range]::-webkit-slider-runnable-track {
+    width: 100%;
+    height: 8px;
+    cursor: pointer;
+    background: #ddd;
+    border-radius: 4px;
+}
+
+/* Firefox Track */
+input[type=range]::-moz-range-track {
+    width: 100%;
+    height: 8px;
+    cursor: pointer;
+    background: #ddd;
+    border-radius: 4px;
+}
+
 .description {
     font-size: 0.85rem;
     color: #666;
