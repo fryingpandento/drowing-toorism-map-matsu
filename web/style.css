@@ -6,8 +6,9 @@
     --text-color: #333;
     --text-light: #666;
     --border-color: #e0e0e0;
-    --shadow: 0 4px 6px rgba(0,0,0,0.05);
+    --shadow: 0 4px 6px rgba(0, 0, 0, 0.05);
     --glass-bg: rgba(255, 255, 255, 0.95);
+    --mobile-header-height: 60px;
 }
 
 * {
@@ -27,6 +28,28 @@ body {
 .app-container {
     display: flex;
     height: 100%;
+    position: relative;
+    /* For mobile absolute positioning */
+}
+
+/* Mobile Menu Button */
+.mobile-menu-btn {
+    display: none;
+    /* Hidden on desktop */
+    position: absolute;
+    top: 20px;
+    left: 20px;
+    z-index: 1001;
+    /* Above map */
+    background: white;
+    border: none;
+    width: 44px;
+    height: 44px;
+    border-radius: 50%;
+    box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+    font-size: 1.2rem;
+    color: var(--text-color);
+    cursor: pointer;
 }
 
 /* Sidebar */
@@ -39,11 +62,12 @@ body {
     flex-direction: column;
     overflow-y: auto;
     z-index: 1000;
-    box-shadow: 2px 0 10px rgba(0,0,0,0.05);
+    box-shadow: 2px 0 10px rgba(0, 0, 0, 0.05);
+    transition: transform 0.3s cubic-bezier(0.25, 0.8, 0.25, 1);
 }
 
 .header {
-    margin-bottom: 30px;
+    margin-bottom: 20px;
 }
 
 .header h1 {
@@ -60,13 +84,13 @@ body {
 }
 
 .control-group {
-    margin-bottom: 25px;
+    margin-bottom: 20px;
 }
 
 .control-group label {
     display: block;
     font-weight: 600;
-    margin-bottom: 10px;
+    margin-bottom: 8px;
     font-size: 0.95rem;
     color: #444;
 }
@@ -93,25 +117,36 @@ select {
     flex: 1;
     border: none;
     background: transparent;
-    padding: 8px;
+    padding: 6px 4px;
+    /* Slightly tighter */
     border-radius: 6px;
     cursor: pointer;
     font-weight: 500;
     transition: all 0.2s;
     font-family: inherit;
     color: var(--text-light);
+    font-size: 0.85rem;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 4px;
+}
+
+.toggle-switch button i {
+    font-size: 1rem;
 }
 
 .toggle-switch button.active {
     background: white;
     color: var(--primary-color);
-    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
 }
 
 .hint {
     font-size: 0.8rem;
     color: #888;
     margin-top: 5px;
+    line-height: 1.4;
 }
 
 .checkbox-list {
@@ -128,6 +163,12 @@ select {
     cursor: pointer;
 }
 
+.checkbox-item input {
+    width: 16px;
+    height: 16px;
+    accent-color: var(--primary-color);
+}
+
 .primary-btn {
     width: 100%;
     padding: 12px;
@@ -140,6 +181,8 @@ select {
     transition: background 0.2s;
     font-size: 1rem;
     margin-top: auto;
+    position: sticky;
+    bottom: 0;
 }
 
 .primary-btn:hover:not(:disabled) {
@@ -155,6 +198,8 @@ select {
 .main-content {
     flex: 1;
     position: relative;
+    overflow: hidden;
+    /* Contain map */
 }
 
 #map {
@@ -168,14 +213,14 @@ select {
     top: 20px;
     right: 20px;
     bottom: 20px;
-    width: 400px;
+    width: 380px;
     background: var(--glass-bg);
     border-radius: 12px;
-    box-shadow: 0 8px 32px rgba(0,0,0,0.1);
+    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
     backdrop-filter: blur(10px);
     display: flex;
     flex-direction: column;
-    border: 1px solid rgba(255,255,255,0.5);
+    border: 1px solid rgba(255, 255, 255, 0.5);
     z-index: 1000;
     transition: transform 0.3s cubic-bezier(0.25, 0.8, 0.25, 1);
 }
@@ -185,25 +230,28 @@ select {
 }
 
 .results-header {
-    padding: 20px;
+    padding: 15px 20px;
     border-bottom: 1px solid var(--border-color);
     position: relative;
+    background: rgba(255, 255, 255, 0.8);
+    border-radius: 12px 12px 0 0;
 }
 
 .results-header h2 {
-    font-size: 1.2rem;
+    font-size: 1.1rem;
     margin-bottom: 10px;
 }
 
 #close-results {
     position: absolute;
-    top: 20px;
-    right: 20px;
+    top: 15px;
+    right: 15px;
     border: none;
     background: transparent;
     font-size: 1.2rem;
     cursor: pointer;
     color: #666;
+    padding: 5px;
 }
 
 .filters {
@@ -229,6 +277,7 @@ select {
     padding: 8px 8px 8px 32px;
     border: 1px solid var(--border-color);
     border-radius: 6px;
+    font-size: 0.9rem;
 }
 
 .filter-tags {
@@ -240,42 +289,45 @@ select {
 .results-list {
     flex: 1;
     overflow-y: auto;
-    padding: 20px;
+    padding: 15px;
 }
 
 /* Spot Card */
 .spot-card {
     background: white;
-    padding: 15px;
+    padding: 12px 15px;
+    /* Compact padding */
     border-radius: 10px;
     margin-bottom: 12px;
     border-left: 4px solid var(--primary-color);
-    box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
     transition: transform 0.1s;
+    cursor: pointer;
+    -webkit-tap-highlight-color: transparent;
+    /* Remove mobile styling */
 }
 
-.spot-card:hover {
-    transform: translateY(-2px);
-    box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+.spot-card:active {
+    background: #f8f8f8;
 }
 
 .spot-title {
     font-weight: 700;
-    font-size: 1.05rem;
-    margin-bottom: 5px;
+    font-size: 1rem;
+    margin-bottom: 4px;
 }
 
 .spot-meta {
     display: flex;
     flex-wrap: wrap;
-    gap: 8px;
+    gap: 6px;
     margin-bottom: 8px;
     align-items: center;
 }
 
 .spot-tag {
-    font-size: 0.75rem;
-    padding: 2px 8px;
+    font-size: 0.7rem;
+    padding: 2px 6px;
     background: #f0f2f5;
     border-radius: 4px;
     color: #555;
@@ -307,6 +359,7 @@ select {
     margin-top: 20px;
     font-weight: 600;
     color: var(--primary-color);
+    padding-bottom: 20px;
 }
 
 .spinner {
@@ -319,9 +372,15 @@ select {
 }
 
 @keyframes spin {
-    0% { transform: rotate(0deg); }
-    100% { transform: rotate(360deg); }
+    0% {
+        transform: rotate(0deg);
+    }
+
+    100% {
+        transform: rotate(360deg);
+    }
 }
+
 .hidden {
     display: none !important;
 }
@@ -329,7 +388,71 @@ select {
 /* Leaflet Customization */
 .leaflet-container {
     cursor: grab;
+    -webkit-tap-highlight-color: transparent;
 }
+
 .drawing-mode .leaflet-container {
     cursor: crosshair !important;
+}
+
+.pin-mode .leaflet-container {
+    cursor: pointer !important;
+}
+
+/* Mobile Responsive Styles */
+@media (max-width: 768px) {
+    .app-container {
+        flex-direction: column;
+    }
+
+    .mobile-menu-btn {
+        display: block;
+    }
+
+    /* Sidebar as overlay/drawer */
+    .sidebar {
+        position: absolute;
+        top: 0;
+        left: 0;
+        bottom: 0;
+        width: 85%;
+        /* Occuplies most of screen */
+        max-width: 320px;
+        transform: translateX(-100%);
+        /* Hidden by default */
+        box-shadow: 2px 0 20px rgba(0, 0, 0, 0.2);
+    }
+
+    .sidebar.open {
+        transform: translateX(0);
+    }
+
+    /* Results Panel as Bottom Sheet */
+    .results-panel {
+        top: auto;
+        /* Not absolute top */
+        right: 0;
+        bottom: 0;
+        left: 0;
+        width: 100%;
+        height: 60vh;
+        /* Takes up 60% of screen */
+        border-radius: 20px 20px 0 0;
+        transform: translateY(110%);
+        /* Slide down to hide */
+    }
+
+    .results-panel.hidden {
+        transform: translateY(110%);
+    }
+
+    /* Adjust controls for touch */
+    .toggle-switch button {
+        padding: 10px 4px;
+        /* Larger touch target */
+    }
+
+    .header h1 {
+        font-size: 1.3rem;
+    }
 }

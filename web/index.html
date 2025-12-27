@@ -1,24 +1,29 @@
 <!DOCTYPE html>
 <html lang="ja">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Deep Tourism Map - JS Version</title>
-    
+
     <!-- Google Fonts -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;600&family=Zen+Kaku+Gothic+New:wght@400;500;700&display=swap" rel="stylesheet">
-    
+    <link
+        href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;600&family=Zen+Kaku+Gothic+New:wght@400;500;700&display=swap"
+        rel="stylesheet">
+
     <!-- Leaflet CSS -->
-    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY=" crossorigin=""/>
-    
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"
+        integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY=" crossorigin="" />
+
     <!-- Font Awesome -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-    
+
     <!-- Custom CSS -->
     <link rel="stylesheet" href="style.css">
 </head>
+
 <body>
     <div class="app-container">
         <!-- Sidebar -->
@@ -38,12 +43,13 @@
 
             <!-- Drawing Tool Toggle -->
             <div class="control-group drawing-section">
-                <label>🖊️ エリア指定</label>
+                <label>🖊️ エリア指定 / 📍 ピン留め</label>
                 <div class="toggle-switch">
                     <button id="mode-pan" class="active" title="地図を移動"><i class="fa-solid fa-hand"></i> 移動</button>
                     <button id="mode-draw" title="フリーハンドで描画"><i class="fa-solid fa-pen-nib"></i> 描く</button>
+                    <button id="mode-pin" title="タップで円検索"><i class="fa-solid fa-location-dot"></i> ピン</button>
                 </div>
-                <p class="hint">「描く」を選択して、地図上をドラッグして囲んでください。</p>
+                <p class="hint" id="mode-hint">「移動」モード：地図をドラッグして移動します。</p>
             </div>
 
             <!-- Category Selection -->
@@ -64,18 +70,19 @@
                 <div class="spinner"></div>
                 <span>スポットを収集中...</span>
             </div>
-            
+
         </div>
 
         <!-- Main Map Area -->
         <div class="main-content">
+            <button id="mobile-menu-btn" class="mobile-menu-btn"><i class="fa-solid fa-bars"></i></button>
             <div id="map"></div>
-            
+
             <!-- Result Panel (Slide-over or Bottom sheet style) -->
             <div id="results-panel" class="results-panel hidden">
                 <div class="results-header">
                     <h2><span id="result-count">0</span> lights found</h2>
-                    
+
                     <!-- Filters -->
                     <div class="filters">
                         <div class="search-input">
@@ -97,9 +104,11 @@
     </div>
 
     <!-- Leaflet JS -->
-    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo=" crossorigin=""></script>
-    
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"
+        integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo=" crossorigin=""></script>
+
     <!-- App Logic -->
     <script src="app.js"></script>
 </body>
+
 </html>

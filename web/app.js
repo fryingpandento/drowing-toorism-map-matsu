@@ -77,6 +77,28 @@ function initMap() {
     map.on('mousedown', onMapMouseDown);
     map.on('mousemove', onMapMouseMove);
     map.on('mouseup', onMapMouseUp);
+    map.on('click', onMapClick);
+}
+
+function onMapClick(e) {
+    if (mode !== 'pin') return;
+
+    // Clear previous search area
+    if (currentPin) map.removeLayer(currentPin);
+    if (currentPolygon) { map.removeLayer(currentPolygon); currentPolygon = null; }
+
+    currentPin = L.circle(e.latlng, {
+        color: '#ff4b4b',
+        fillColor: '#ff4b4b',
+        fillOpacity: 0.2,
+        radius: 1000 // 1km
+    }).addTo(map);
+
+    // Auto search on pin drop
+    searchSpots(e.latlng);
+
+    // On mobile, close sidebar if open
+    document.querySelector('.sidebar').classList.remove('open');
 }
 
 // ... (UI Init Code Unchanged) ...
@@ -211,8 +233,10 @@ function onMapMouseUp(e) {
 }
 
 // --- API Logic ---
-async function searchSpots() {
-    if (!currentPolygon) return;
+
+async function searchSpots(centerLatLng = null) {
+    // Check if we have a valid search area
+    if (!currentPolygon && !currentPin && !centerLatLng) return;
 
     const loader = document.getElementById('loader');
     loader.classList.remove('hidden');
@@ -227,20 +251,24 @@ async function searchSpots() {
         return;
     }
 
-    // 2. Build Poly String for Overpass
-    // Overpass expects: "lat1 lon1 lat2 lon2 ..."
-    const latlngs = currentPolygon.getLatLngs()[0]; // Outer ring
-    const polyStr = latlngs.map(ll => `${ll.lat} ${ll.lng}`).join(' ');
-
-    // 3. Build Query
+    // 2. Build Query
     let queryParts = "";
+
     selectedCats.forEach(cat => {
         if (TOURISM_FILTERS[cat]) {
             TOURISM_FILTERS[cat].forEach(q => {
-                // Replace 'query' type with filter
-                // e.g. node["tourism"] -> node["tourism"](poly:"...")
-                // Note: JS strings are single quoted in definitions above, simplified parsing:
-                queryParts += `${q}(poly:"${polyStr}");\n`;
+                // Add spatial filter
+                if (currentPin || (centerLatLng && centerLatLng.lat)) {
+                    // Radius Search (around:1000, lat, lon)
+                    const lat = centerLatLng.lat || currentPin.getLatLng().lat;
+                    const lng = centerLatLng.lng || currentPin.getLatLng().lng;
+                    queryParts += `${q}(around:1000,${lat},${lng});\n`;
+                } else if (currentPolygon) {
+                    // Polygon Search
+                    const latlngs = currentPolygon.getLatLngs()[0];
+                    const polyStr = latlngs.map(ll => `${ll.lat} ${ll.lng}`).join(' ');
+                    queryParts += `${q}(poly:"${polyStr}");\n`;
+                }
             });
         }
     });
