@@ -364,7 +364,7 @@ input[type=range]::-moz-range-track {
     }
 
     /* Results Panel overrides */
-    #results-panel {
+    #results-section {
         width: 90%;
         left: 5%;
         height: auto;
