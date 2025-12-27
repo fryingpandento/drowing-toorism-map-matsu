@@ -540,6 +540,7 @@ function createCard(spot, container) {
         if (window.innerWidth <= 768) {
             const sidebar = document.getElementById('sidebar');
             if (sidebar) sidebar.classList.remove('expanded');
+            e.stopPropagation(); // Prevent bubbling to sidebar (which would re-expand it)
         }
     });
 
