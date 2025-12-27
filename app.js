@@ -87,13 +87,11 @@ function initMap() {
 
 // --- Touch Handling ---
 // --- Touch Handling ---
-function getParamsFromTouch(touch) {
-    // Manually construct a point to avoid event object discrepancies
-    const containerPoint = map.mouseEventToContainerPoint({
-        clientX: touch.clientX,
-        clientY: touch.clientY
-    });
-    return map.containerPointToLatLng(containerPoint);
+function getLatLngFromTouch(touch) {
+    const rect = map.getContainer().getBoundingClientRect();
+    const x = touch.clientX - rect.left;
+    const y = touch.clientY - rect.top;
+    return map.containerPointToLatLng(L.point(x, y));
 }
 
 function onTouchStart(e) {
@@ -101,9 +99,17 @@ function onTouchStart(e) {
     e.preventDefault();
     if (e.touches.length === 0) return;
 
+    isDrawing = true;
     const touch = e.touches[0];
-    const latlng = getParamsFromTouch(touch);
-    onMapMouseDown({ latlng: latlng });
+    const latlng = getLatLngFromTouch(touch);
+
+    drawnCoordinates = [latlng];
+
+    // Clear existing
+    if (currentPolygon) map.removeLayer(currentPolygon);
+    if (currentPolyline) map.removeLayer(currentPolyline);
+
+    currentPolyline = L.polyline(drawnCoordinates, { color: 'red', weight: 3 }).addTo(map);
 }
 
 function onTouchMove(e) {
@@ -112,13 +118,16 @@ function onTouchMove(e) {
     if (e.touches.length === 0) return;
 
     const touch = e.touches[0];
-    const latlng = getParamsFromTouch(touch);
-    onMapMouseMove({ latlng: latlng });
+    const latlng = getLatLngFromTouch(touch);
+
+    drawnCoordinates.push(latlng);
+    currentPolyline.setLatLngs(drawnCoordinates);
 }
 
 function onTouchEnd(e) {
     if (mode !== 'draw') return;
-    onMapMouseUp({});
+    e.preventDefault();
+    onMapMouseUp({}); // Logic is state-based, so this is safe
 }
 
 
