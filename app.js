@@ -76,6 +76,7 @@ function initMap() {
     map.on('mousedown', startDraw);
     map.on('mousemove', moveDraw);
     map.on('mouseup', endDraw);
+    map.on('click', onPointSearch);
 
     // Touch Events (for Mobile)
     const mapContainer = map.getContainer();
@@ -148,27 +149,36 @@ function setMode(mode) {
     currentMode = mode;
     document.getElementById('mode-pan').classList.toggle('active', mode === 'pan');
     document.getElementById('mode-draw').classList.toggle('active', mode === 'draw');
+    document.getElementById('mode-box').classList.toggle('active', mode === 'box');
+    document.getElementById('mode-radius').classList.toggle('active', mode === 'radius');
 
     const hint = document.getElementById('mode-hint');
     if (hint) {
         if (mode === 'pan') {
             hint.textContent = "地図をドラッグして移動します。";
             if (map && map.dragging) map.dragging.enable();
-        } else {
-            hint.textContent = "地図上をなぞって範囲を囲んでください。";
+        } else if (mode === 'draw') {
+            hint.textContent = "地図上を自由になぞって囲んでください。";
             if (map && map.dragging) map.dragging.disable();
+        } else if (mode === 'box') {
+            hint.textContent = "ドラッグして四角形で囲んでください。";
+            if (map && map.dragging) map.dragging.disable();
+        } else if (mode === 'radius') {
+            hint.textContent = "地図上の点をクリックすると、周辺(3km)を検索します。";
+            if (map && map.dragging) map.dragging.enable(); // Allow panning
         }
     }
 }
 
 function isDrawingMode() {
-    return currentMode === 'draw';
+    return currentMode === 'draw' || currentMode === 'box';
 }
 
 // --- Custom Drawing Logic ---
 let isDrawing = false;
 let drawnCoordinates = [];
 let currentPolyline = null;
+let currentRect = null;
 let currentPolygon = null;
 
 function startDraw(e) {
@@ -185,8 +195,13 @@ function startDraw(e) {
     // Clear previous
     if (currentPolyline) map.removeLayer(currentPolyline);
     if (currentPolygon) map.removeLayer(currentPolygon);
+    if (currentRect) map.removeLayer(currentRect);
 
-    currentPolyline = L.polyline(drawnCoordinates, { color: 'red' }).addTo(map);
+    if (currentMode === 'draw') {
+        currentPolyline = L.polyline(drawnCoordinates, { color: 'red' }).addTo(map);
+    } else if (currentMode === 'box') {
+        currentRect = L.rectangle([latlng, latlng], { color: 'red' }).addTo(map);
+    }
 }
 
 function moveDraw(e) {
@@ -196,8 +211,12 @@ function moveDraw(e) {
 
     if (!latlng) return;
 
-    drawnCoordinates.push(latlng);
-    currentPolyline.setLatLngs(drawnCoordinates);
+    if (currentMode === 'draw') {
+        drawnCoordinates.push(latlng);
+        currentPolyline.setLatLngs(drawnCoordinates);
+    } else if (currentMode === 'box') {
+        currentRect.setBounds([drawnCoordinates[0], latlng]);
+    }
 }
 
 function endDraw() {
@@ -205,16 +224,25 @@ function endDraw() {
     isDrawing = false;
 
     // Convert to Polygon for visualization
-    if (currentPolyline) map.removeLayer(currentPolyline);
+    if (currentMode === 'draw') {
+        if (currentPolyline) map.removeLayer(currentPolyline);
+        currentPolygon = L.polygon(drawnCoordinates, {
+            color: '#ff4b4b',
+            fillColor: '#ff4b4b',
+            fillOpacity: 0.2
+        }).addTo(map);
+        searchSpots(currentPolygon);
+    } else if (currentMode === 'box') {
+        const bounds = currentRect.getBounds();
+        if (currentRect) map.removeLayer(currentRect);
 
-    currentPolygon = L.polygon(drawnCoordinates, {
-        color: '#ff4b4b',
-        fillColor: '#ff4b4b',
-        fillOpacity: 0.2
-    }).addTo(map);
-
-    // Trigger Search with the drawn polygon
-    searchSpots(currentPolygon);
+        currentPolygon = L.rectangle(bounds, {
+            color: '#ff4b4b',
+            fillColor: '#ff4b4b',
+            fillOpacity: 0.2
+        }).addTo(map);
+        searchSpots(currentPolygon);
+    }
 }
 
 // --- Search Logic (Ported from get_specialized_spots) ---

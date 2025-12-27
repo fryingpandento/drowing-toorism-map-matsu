@@ -24,9 +24,11 @@
             <div class="control-group"
                 style="margin-bottom: 15px; background: #eef; padding: 10px; border-radius: 8px;">
                 <label>① 操作モード</label>
-                <div style="display:flex; gap:10px;">
+                <div style="display:flex; gap:10px; flex-wrap: wrap;">
                     <button id="mode-pan" class="mode-btn active" onclick="setMode('pan')">✋ 移動</button>
-                    <button id="mode-draw" class="mode-btn" onclick="setMode('draw')">✏️ 描く</button>
+                    <button id="mode-draw" class="mode-btn" onclick="setMode('draw')">✏️ 自由</button>
+                    <button id="mode-box" class="mode-btn" onclick="setMode('box')">⬜ 四角</button>
+                    <button id="mode-radius" class="mode-btn" onclick="setMode('radius')">📍 周辺</button>
                 </div>
                 <p id="mode-hint" style="font-size:0.8em; color:#666; margin-top:5px;">
                     地図をドラッグして移動します。
