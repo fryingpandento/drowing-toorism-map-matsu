@@ -1,5 +1,5 @@
 import { initMap } from './map.js';
-import { initUI, setMode } from './ui.js';
+import { initUI, setMode } from './ui.js?v=3.0';
 import { initFavorites, toggleFavorite, removeFavorite } from './store.js';
 import { parseURLParams } from './share.js';
 import { searchLocation } from './geocoder.js';
