@@ -33,16 +33,16 @@ export function initUI(map) {
 
         header.appendChild(shareBtn);
     }
-}
 
-// Add Geocoding Search Box (Dynamically injected)
-// Insert after the description or before Region Select
-const description = document.querySelector('.description');
-if (description) {
-    const searchContainer = document.createElement('div');
-    searchContainer.className = 'control-group';
-    searchContainer.style.marginBottom = '10px';
-    searchContainer.innerHTML = `
+
+    // Add Geocoding Search Box (Dynamically injected)
+    // Insert after the description or before Region Select
+    const description = document.querySelector('.description');
+    if (description) {
+        const searchContainer = document.createElement('div');
+        searchContainer.className = 'control-group';
+        searchContainer.style.marginBottom = '10px';
+        searchContainer.innerHTML = `
             <label style="display:flex; justify-content:space-between; align-items:center;">
                 地名検索
                 <span style="font-size:0.8em; color:#666; font-weight:normal;">(例: 東京駅)</span>
@@ -52,129 +52,129 @@ if (description) {
                 <button id="geo-search-btn" style="padding:5px 10px; cursor:pointer;">🔍</button>
             </div>
         `;
-    // Insert after description
-    description.parentNode.insertBefore(searchContainer, description.nextSibling);
-    // Actually, maybe better BEFORE description or Region select?
-    // Let's put it BEFORE the Region Select (which is after description usually? check HTML)
-    // HTML: .description is after Region Select? No.
-    // Let's check HTML.
-    // <div class="control-group">Region</div> -> <p class="description">
-    // So maybe BEFORE Region select is better for visibility.
-} else {
-    // Fallback: prepend to sidebar content container
-    // But let's verify HTML structure first? 
-    // I'll just append to .control-group container if I can find it.
-    // Or simpler: Insert before region-select wrapper.
-}
+        // Insert after description
+        description.parentNode.insertBefore(searchContainer, description.nextSibling);
+        // Actually, maybe better BEFORE description or Region select?
+        // Let's put it BEFORE the Region Select (which is after description usually? check HTML)
+        // HTML: .description is after Region Select? No.
+        // Let's check HTML.
+        // <div class="control-group">Region</div> -> <p class="description">
+        // So maybe BEFORE Region select is better for visibility.
+    } else {
+        // Fallback: prepend to sidebar content container
+        // But let's verify HTML structure first? 
+        // I'll just append to .control-group container if I can find it.
+        // Or simpler: Insert before region-select wrapper.
+    }
 
-// Better Strategy: Insert before #region-select's parent .control-group
-const targetSelect = document.getElementById('region-select');
-if (targetSelect) {
-    const regionGroup = targetSelect.closest('.control-group');
-    if (regionGroup) {
-        const searchContainer = document.createElement('div');
-        searchContainer.className = 'control-group';
-        searchContainer.innerHTML = `
+    // Better Strategy: Insert before #region-select's parent .control-group
+    const targetSelect = document.getElementById('region-select');
+    if (targetSelect) {
+        const regionGroup = targetSelect.closest('.control-group');
+        if (regionGroup) {
+            const searchContainer = document.createElement('div');
+            searchContainer.className = 'control-group';
+            searchContainer.innerHTML = `
                 <label>📍 地名・駅名で移動</label>
                 <div style="display:flex; gap:5px;">
                     <input type="text" id="geo-input" placeholder="例: 京都駅, 嵐山" style="flex:1; padding:8px; border:1px solid #ccc; border-radius:4px;">
                     <button id="geo-search-btn" style="padding:8px 12px; cursor:pointer; background:#eee; border:1px solid #ccc; border-radius:4px;">Go</button>
                 </div>
             `;
-        regionGroup.parentNode.insertBefore(searchContainer, regionGroup);
-    }
-}
-
-// Mode Toggle Logic
-document.getElementById('mode-pan').addEventListener('click', () => setMode('pan'));
-document.getElementById('mode-draw').addEventListener('click', () => setMode('draw'));
-document.getElementById('mode-box').addEventListener('click', () => setMode('box'));
-document.getElementById('mode-radius').addEventListener('click', () => setMode('radius'));
-
-// Region Select
-const regionSelect = document.getElementById('region-select');
-Object.keys(REGIONS).forEach(key => {
-    const option = document.createElement('option');
-    option.value = key;
-    option.textContent = key;
-    if (key === "関東 (東京)") option.selected = true;
-    regionSelect.appendChild(option);
-});
-
-regionSelect.addEventListener('change', (e) => {
-    const coords = REGIONS[e.target.value];
-    map.setView([coords[0], coords[1]], coords[2]);
-});
-
-// Categories
-const catList = document.getElementById('category-list');
-Object.keys(TOURISM_FILTERS).forEach(key => {
-    const div = document.createElement('div');
-    div.className = 'checkbox-item';
-    div.innerHTML = `<label><input type="checkbox" value="${key}" checked> ${key}</label>`;
-    catList.appendChild(div);
-});
-
-// Filters (Client-side)
-// We need to import applyFilters from api.js. 
-// To avoid top-level await or cycle issues, we can just bind it inside a lambda if imported.
-const handleFilter = () => {
-    import('./api.js').then(module => module.applyFilters());
-    // Dynamic import or standard import? Standard import is circular. 
-    // Let's try standard import at top.
-}
-document.getElementById('filter-text').addEventListener('input', handleFilter);
-document.getElementById('filter-web').addEventListener('change', handleFilter);
-document.getElementById('filter-wiki').addEventListener('change', handleFilter);
-document.getElementById('filter-hours').addEventListener('change', handleFilter);
-
-// Radius Slider Listener
-const radiusSlider = document.getElementById('radius-select');
-const radiusVal = document.getElementById('radius-val');
-if (radiusSlider && radiusVal) {
-    radiusSlider.addEventListener('input', (e) => {
-        const val = parseInt(e.target.value);
-        if (val >= 1000) {
-            radiusVal.textContent = (val / 1000) + "km";
-        } else {
-            radiusVal.textContent = val + "m";
+            regionGroup.parentNode.insertBefore(searchContainer, regionGroup);
         }
+    }
+
+    // Mode Toggle Logic
+    document.getElementById('mode-pan').addEventListener('click', () => setMode('pan'));
+    document.getElementById('mode-draw').addEventListener('click', () => setMode('draw'));
+    document.getElementById('mode-box').addEventListener('click', () => setMode('box'));
+    document.getElementById('mode-radius').addEventListener('click', () => setMode('radius'));
+
+    // Region Select
+    const regionSelect = document.getElementById('region-select');
+    Object.keys(REGIONS).forEach(key => {
+        const option = document.createElement('option');
+        option.value = key;
+        option.textContent = key;
+        if (key === "関東 (東京)") option.selected = true;
+        regionSelect.appendChild(option);
     });
-}
 
-// Mobile Bottom Sheet Toggle
-const sidebarHandle = document.getElementById('sidebar-handle');
-const sidebarCloseBtn = document.getElementById('sidebar-close-btn');
-const sidebar = document.getElementById('sidebar');
+    regionSelect.addEventListener('change', (e) => {
+        const coords = REGIONS[e.target.value];
+        map.setView([coords[0], coords[1]], coords[2]);
+    });
 
-if (sidebar) {
-    if (sidebarCloseBtn) {
-        sidebarCloseBtn.addEventListener('click', (e) => {
-            sidebar.classList.remove('expanded');
-            e.stopPropagation();
+    // Categories
+    const catList = document.getElementById('category-list');
+    Object.keys(TOURISM_FILTERS).forEach(key => {
+        const div = document.createElement('div');
+        div.className = 'checkbox-item';
+        div.innerHTML = `<label><input type="checkbox" value="${key}" checked> ${key}</label>`;
+        catList.appendChild(div);
+    });
+
+    // Filters (Client-side)
+    // We need to import applyFilters from api.js. 
+    // To avoid top-level await or cycle issues, we can just bind it inside a lambda if imported.
+    const handleFilter = () => {
+        import('./api.js').then(module => module.applyFilters());
+        // Dynamic import or standard import? Standard import is circular. 
+        // Let's try standard import at top.
+    }
+    document.getElementById('filter-text').addEventListener('input', handleFilter);
+    document.getElementById('filter-web').addEventListener('change', handleFilter);
+    document.getElementById('filter-wiki').addEventListener('change', handleFilter);
+    document.getElementById('filter-hours').addEventListener('change', handleFilter);
+
+    // Radius Slider Listener
+    const radiusSlider = document.getElementById('radius-select');
+    const radiusVal = document.getElementById('radius-val');
+    if (radiusSlider && radiusVal) {
+        radiusSlider.addEventListener('input', (e) => {
+            const val = parseInt(e.target.value);
+            if (val >= 1000) {
+                radiusVal.textContent = (val / 1000) + "km";
+            } else {
+                radiusVal.textContent = val + "m";
+            }
         });
     }
 
-    sidebar.addEventListener('click', (e) => {
-        if (e.target.tagName === 'INPUT' || e.target.tagName === 'SELECT' || e.target.tagName === 'BUTTON' || e.target.tagName === 'A' || e.target.tagName === 'LABEL') {
-            return;
-        }
-        if (sidebar.classList.contains('expanded')) {
-            const isHandle = e.target === sidebarHandle || e.target.closest('#sidebar-handle');
-            const isHeader = e.target.tagName === 'H1' || e.target.closest('h1');
-            if (isHandle || isHeader) {
-                sidebar.classList.remove('expanded');
-            }
-        } else {
-            sidebar.classList.add('expanded');
-        }
-    });
-}
+    // Mobile Bottom Sheet Toggle
+    const sidebarHandle = document.getElementById('sidebar-handle');
+    const sidebarCloseBtn = document.getElementById('sidebar-close-btn');
+    const sidebar = document.getElementById('sidebar');
 
-// Default Mobile Mode
-if (window.innerWidth <= 768) {
-    setMode('radius');
-}
+    if (sidebar) {
+        if (sidebarCloseBtn) {
+            sidebarCloseBtn.addEventListener('click', (e) => {
+                sidebar.classList.remove('expanded');
+                e.stopPropagation();
+            });
+        }
+
+        sidebar.addEventListener('click', (e) => {
+            if (e.target.tagName === 'INPUT' || e.target.tagName === 'SELECT' || e.target.tagName === 'BUTTON' || e.target.tagName === 'A' || e.target.tagName === 'LABEL') {
+                return;
+            }
+            if (sidebar.classList.contains('expanded')) {
+                const isHandle = e.target === sidebarHandle || e.target.closest('#sidebar-handle');
+                const isHeader = e.target.tagName === 'H1' || e.target.closest('h1');
+                if (isHandle || isHeader) {
+                    sidebar.classList.remove('expanded');
+                }
+            } else {
+                sidebar.classList.add('expanded');
+            }
+        });
+    }
+
+    // Default Mobile Mode
+    if (window.innerWidth <= 768) {
+        setMode('radius');
+    }
 
 }
 
