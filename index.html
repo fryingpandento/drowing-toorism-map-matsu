@@ -9,7 +9,7 @@
     <!-- Leaflet CSS -->
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" crossorigin="" />
 
-    <link rel="stylesheet" href="style.css?v=PIN_COLORS">
+    <link rel="stylesheet" href="style.css?v=COLOR_LEGEND">
 
     <!-- Mobile Debugging: Global Error Handler -->
     <script>
@@ -74,6 +74,17 @@
             </p>
 
             <div class="control-group">
+                <label>カテゴリ凡例</label>
+                <div style="font-size:0.8em; line-height:1.8; margin-bottom:10px;">
+                    <span class="spot-tag tag-nature" style="margin-right:2px;">絶景</span> 緑
+                    <span class="spot-tag tag-history" style="margin-right:2px; margin-left:5px;">歴史</span> 茶
+                    <span class="spot-tag tag-art" style="margin-right:2px; margin-left:5px;">芸術</span> 紫
+                    <br>
+                    <span class="spot-tag tag-relax" style="margin-right:2px;">温泉</span> 水
+                    <span class="spot-tag tag-entertainment" style="margin-right:2px; margin-left:5px;">体験</span> 橙
+                    <span class="spot-tag tag-food" style="margin-right:2px; margin-left:5px;">食事</span> 桃
+                </div>
+
                 <label>カテゴリ選択</label>
                 <div id="category-list">
                     <!-- Checkboxes injected by JS -->
