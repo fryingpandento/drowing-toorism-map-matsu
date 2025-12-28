@@ -110,50 +110,50 @@ export function initUI(map) {
         };
     }
 
-}
 
-// Geocoding Search Box Injection
-if (!document.getElementById('geo-input')) {
-    const targetSelect = document.getElementById('region-select');
-    if (targetSelect) {
-        const regionGroup = targetSelect.closest('.control-group');
-        if (regionGroup) {
-            const searchContainer = document.createElement('div');
-            searchContainer.className = 'control-group';
-            searchContainer.innerHTML = `
+
+    // Geocoding Search Box Injection
+    if (!document.getElementById('geo-input')) {
+        const targetSelect = document.getElementById('region-select');
+        if (targetSelect) {
+            const regionGroup = targetSelect.closest('.control-group');
+            if (regionGroup) {
+                const searchContainer = document.createElement('div');
+                searchContainer.className = 'control-group';
+                searchContainer.innerHTML = `
                     <label>📍 地名・駅名で移動</label>
                     <div style="display:flex; gap:5px;">
                         <input type="text" id="geo-input" placeholder="例: 京都駅, 嵐山" style="flex:1; padding:8px; border:1px solid #ccc; border-radius:4px;">
                         <button id="geo-search-btn" style="padding:8px 12px; cursor:pointer; background:#eee; border:1px solid #ccc; border-radius:4px;">Go</button>
                     </div>
                 `;
-            regionGroup.parentNode.insertBefore(searchContainer, regionGroup);
+                regionGroup.parentNode.insertBefore(searchContainer, regionGroup);
+            }
         }
     }
-}
 
-function updateRouteStatus(status) {
-    const msg = document.getElementById('route-msg');
-    const genBtn = document.getElementById('route-gen');
-    if (!msg || !genBtn) return;
+    function updateRouteStatus(status) {
+        const msg = document.getElementById('route-msg');
+        const genBtn = document.getElementById('route-gen');
+        if (!msg || !genBtn) return;
 
-    if (status === 'start_set') {
-        msg.textContent = "【手順②】次はゴール地点(G)を選択してください";
-        msg.style.color = "#d32f2f";
-    } else if (status === 'goal_set') {
-        msg.textContent = "準備OK！「生成」ボタンを押してください";
-        msg.style.color = "#388e3c";
-        genBtn.disabled = false;
-        genBtn.style.backgroundColor = "#ff4b4b";
-        genBtn.style.color = "white";
-    } else if (status === 'reset') {
-        msg.textContent = "【手順①】地図をクリックしてスタート地点(S)を選択";
-        msg.style.color = "black";
-        genBtn.disabled = true;
-        genBtn.style.backgroundColor = "#ccc";
-        genBtn.style.color = "white";
+        if (status === 'start_set') {
+            msg.textContent = "【手順②】次はゴール地点(G)を選択してください";
+            msg.style.color = "#d32f2f";
+        } else if (status === 'goal_set') {
+            msg.textContent = "準備OK！「生成」ボタンを押してください";
+            msg.style.color = "#388e3c";
+            genBtn.disabled = false;
+            genBtn.style.backgroundColor = "#ff4b4b";
+            genBtn.style.color = "white";
+        } else if (status === 'reset') {
+            msg.textContent = "【手順①】地図をクリックしてスタート地点(S)を選択";
+            msg.style.color = "black";
+            genBtn.disabled = true;
+            genBtn.style.backgroundColor = "#ccc";
+            genBtn.style.color = "white";
+        }
     }
-}
 
 }
 
