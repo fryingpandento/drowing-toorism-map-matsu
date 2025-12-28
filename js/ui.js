@@ -358,6 +358,7 @@ export function createCard(spot, container) {
                 ${pinBtnText}
             </button>
         </div>
+    `;
 
 
     card.addEventListener('click', (e) => {
