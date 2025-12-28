@@ -25,13 +25,33 @@ export function initUI(map) {
         shareBtn.className = "mode-btn";
         shareBtn.style.padding = "5px 10px";
         shareBtn.style.fontSize = "0.9rem";
-
         shareBtn.onclick = (e) => {
-            e.stopPropagation(); // Prevent sidebar toggle
+            e.stopPropagation();
             generateShareURL(mapInstance);
         };
 
-        header.appendChild(shareBtn);
+        // Auto Course Button
+        const courseBtn = document.createElement('button');
+        courseBtn.textContent = "🎲 コース生成";
+        courseBtn.className = "mode-btn";
+        courseBtn.style.padding = "5px 10px";
+        courseBtn.style.fontSize = "0.9rem";
+        courseBtn.style.backgroundColor = "#e0f7fa";
+        courseBtn.style.color = "#006064";
+
+        courseBtn.onclick = async (e) => {
+            e.stopPropagation();
+            courseBtn.textContent = "⏳ 生成中...";
+            courseBtn.disabled = true;
+            await generateCourseFromLocation(mapInstance);
+            courseBtn.textContent = "🎲 コース生成";
+            courseBtn.disabled = false;
+        };
+
+        actionContainer.appendChild(shareBtn);
+        actionContainer.appendChild(courseBtn);
+
+        header.parentNode.insertBefore(actionContainer, header.nextSibling);
     }
 
 
