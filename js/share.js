@@ -1,4 +1,4 @@
-import { getFavorites } from './store.js?v=2';
+import { getFavorites } from './store.js';
 
 export function generateShareURL(map) {
     if (!map) return;

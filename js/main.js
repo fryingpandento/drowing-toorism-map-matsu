@@ -1,6 +1,6 @@
 import { initMap } from './map.js';
 import { initUI, setMode } from './ui.js';
-import { initFavorites, toggleFavorite, removeFavorite } from './store.js?v=2';
+import { initFavorites, toggleFavorite, removeFavorite } from './store.js';
 import { parseURLParams } from './share.js';
 import { searchLocation } from './geocoder.js';
 
@@ -54,20 +54,7 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     // 5. Parse URL Params to Restore State
-    const shouldSearch = parseURLParams(map);
-    if (shouldSearch) {
-        // Trigger search using the map bounds
-        // Add a small delay to ensure map view/bounds are updated
-        setTimeout(() => {
-            import('./api.js').then(module => {
-                module.searchSpots(map).catch(err => {
-                    console.error("Auto-search failed:", err);
-                    alert("検索に失敗しました。");
-                    document.getElementById('status-msg').textContent = "エラー";
-                });
-            });
-        }, 500);
-    }
+    parseURLParams(map);
 
     // 6. Expose Global Functions
     window.toggleFavorite = toggleFavorite;
