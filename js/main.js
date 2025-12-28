@@ -57,7 +57,16 @@ document.addEventListener('DOMContentLoaded', () => {
     const shouldSearch = parseURLParams(map);
     if (shouldSearch) {
         // Trigger search using the map bounds
-        import('./api.js').then(module => module.searchSpots(map));
+        // Add a small delay to ensure map view/bounds are updated
+        setTimeout(() => {
+            import('./api.js').then(module => {
+                module.searchSpots(map).catch(err => {
+                    console.error("Auto-search failed:", err);
+                    alert("検索に失敗しました。");
+                    document.getElementById('status-msg').textContent = "エラー";
+                });
+            });
+        }, 500);
     }
 
     // 6. Expose Global Functions
