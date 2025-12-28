@@ -2,7 +2,7 @@ import { REGIONS, TOURISM_FILTERS } from './config.js';
 import { isFavorite, toggleFavorite } from './store.js';
 import { generateShareURL } from './share.js';
 // applyFilters dynamic import used below
-import { setRoutePoint, resetRoutePoints, generateDetourCourse } from './course_manager.js';
+import { setRoutePoint, setExplicitRoutePoint, resetRoutePoints, generateDetourCourse } from './course_manager.js';
 
 let currentMode = 'pan';
 let mapInstance = null; // Store map instance
@@ -87,7 +87,7 @@ export function initUI(map) {
         routePanel.style.marginTop = "10px";
         routePanel.style.marginBottom = "5px";
         routePanel.innerHTML = `
-            <div id="route-msg" style="font-weight:bold; margin-bottom:5px; font-size:0.9em;">地図をクリックしてスタート地点を選択</div>
+            <div id="route-msg" style="font-weight:bold; margin-bottom:5px; font-size:0.9em;">【手順①】地図をクリックしてスタート地点(S)を選択</div>
             <div style="display:flex; gap:5px;">
                 <button id="route-reset" style="flex:1; padding:5px;">リセット</button>
                 <button id="route-gen" style="flex:1; padding:5px; font-weight:bold; background:#ccc; color:white; border:none;" disabled>生成</button>
@@ -116,14 +116,17 @@ export function initUI(map) {
         if (!msg || !genBtn) return;
 
         if (status === 'start_set') {
-            msg.textContent = "次はゴール地点を選択してください";
+            msg.textContent = "【手順②】次はゴール地点(G)を選択してください";
+            msg.style.color = "#d32f2f";
         } else if (status === 'goal_set') {
-            msg.textContent = "「生成」ボタンを押してください";
+            msg.textContent = "準備OK！「生成」ボタンを押してください";
+            msg.style.color = "#388e3c";
             genBtn.disabled = false;
             genBtn.style.backgroundColor = "#ff4b4b";
             genBtn.style.color = "white";
         } else if (status === 'reset') {
-            msg.textContent = "地図をクリックしてスタート地点を選択";
+            msg.textContent = "【手順①】地図をクリックしてスタート地点(S)を選択";
+            msg.style.color = "black";
             genBtn.disabled = true;
             genBtn.style.backgroundColor = "#ccc";
             genBtn.style.color = "white";
@@ -244,8 +247,6 @@ if (window.innerWidth <= 768) {
     setMode('radius');
 }
 
-}
-
 
 export function setMode(mode) {
     currentMode = mode;
@@ -266,22 +267,32 @@ export function setMode(mode) {
     }
 
     const hint = document.getElementById('mode-hint');
+    const mapContainer = document.getElementById('map'); // Get map container for cursor
+
     if (hint) {
+        // Reset Cursor first
+        if (mapContainer) mapContainer.style.cursor = '';
+
         if (mode === 'pan') {
             hint.textContent = "地図をドラッグして移動します。";
             if (mapInstance && mapInstance.dragging) mapInstance.dragging.enable();
+            if (mapContainer) mapContainer.style.cursor = 'grab';
         } else if (mode === 'draw') {
             hint.textContent = "地図上を自由になぞって囲んでください。";
             if (mapInstance && mapInstance.dragging) mapInstance.dragging.disable();
+            if (mapContainer) mapContainer.style.cursor = 'crosshair';
         } else if (mode === 'box') {
             hint.textContent = "ドラッグして四角形で囲んでください。";
             if (mapInstance && mapInstance.dragging) mapInstance.dragging.disable();
+            if (mapContainer) mapContainer.style.cursor = 'crosshair';
         } else if (mode === 'radius') {
             hint.textContent = "地図上の点をクリックすると、周辺を検索します。";
             if (mapInstance && mapInstance.dragging) mapInstance.dragging.enable();
+            if (mapContainer) mapContainer.style.cursor = 'pointer';
         } else if (mode === 'route') {
             hint.textContent = "地図を2箇所クリックして、スタートとゴールを決めてください。";
             if (mapInstance && mapInstance.dragging) mapInstance.dragging.enable();
+            if (mapContainer) mapContainer.style.cursor = 'crosshair'; // Change to crosshair
         }
     }
 }
@@ -434,13 +445,62 @@ export function createCard(spot, container) {
             <span class="spot-tag ${tagClass}">${subtype}</span>
             <span class="spot-details">${detailsHtml.join(' ')}</span>
         </div>
-        <div style="display:flex; gap:10px; margin-top:8px;">
-            <a href="${googleUrl}" target="_blank" class="google-btn">🌏 Googleマップ</a>
-            <button class="${pinBtnClass}" onclick="window.toggleFavorite('${name.replace(/'/g, "\\'")}', ${spot.lat}, ${spot.lon}, this, '${markerClass}')">
+        <div style="display:flex; gap:10px; margin-top:8px; flex-wrap:wrap;">
+            <a href="${googleUrl}" target="_blank" class="google-btn" style="flex:1; text-align:center;">🌏 Map</a>
+            <button class="${pinBtnClass}" onclick="window.toggleFavorite('${name.replace(/'/g, "\\'")}', ${spot.lat}, ${spot.lon}, this, '${markerClass}')" style="flex:1;">
                 ${pinBtnText}
             </button>
         </div>
+        <div style="display:flex; gap:5px; margin-top:5px;">
+            <button class="route-set-btn start" style="flex:1; background:#e8f5e9; color:#2e7d32; border:1px solid #c8e6c9;" data-role="start">S スタート</button>
+            <button class="route-set-btn goal" style="flex:1; background:#ffebee; color:#c62828; border:1px solid #ffcdd2;" data-role="end">G ゴール</button>
+        </div>
     `;
+
+    // Bind Route Buttons
+    card.querySelectorAll('.route-set-btn').forEach(btn => {
+        btn.addEventListener('click', (e) => {
+            e.stopPropagation();
+            const role = btn.dataset.role; // 'start' or 'end'
+
+            // Switch to Route Mode if not active
+            if (currentMode !== 'route') {
+                setMode('route');
+            }
+
+            // Set Point
+            const latlng = { lat: spot.lat, lng: spot.lon };
+            const status = setExplicitRoutePoint(mapInstance, latlng, role);
+
+            // Update Status UI (Need to expose updateRouteStatus or trigger event? It's local.)
+            // We can re-select the message element or expose the function.
+            // Since `updateRouteStatus` is inside `initUI`, we can't call it directly from here easily if `createCard` is separate.
+            // Wait, `createCard` is exported and OUTSIDE `initUI`.
+            // So `updateRouteStatus` is NOT accessible!
+            // Correct. I messed up the scope in my thought process.
+            // `updateRouteStatus` is defined inside `initUI`.
+            // I should move `updateRouteStatus` to module scope or export it.
+            // For now, I will dispatch a custom event or find the element and update it manually?
+            // Safer: Dispatch event `route-status-change`.
+            // OR checks DOM elements directly here since `updateRouteStatus` just updates DOM.
+
+            // Let's implement DOM update directly here to avoid large refactors.
+            const msg = document.getElementById('route-msg');
+            const genBtn = document.getElementById('route-gen');
+            if (msg && genBtn) {
+                if (status === 'start_set') {
+                    msg.textContent = "【手順②】次はゴール地点(G)を選択してください";
+                    msg.style.color = "#d32f2f";
+                } else if (status === 'goal_set') {
+                    msg.textContent = "準備OK！「生成」ボタンを押してください";
+                    msg.style.color = "#388e3c";
+                    genBtn.disabled = false;
+                    genBtn.style.backgroundColor = "#ff4b4b";
+                    genBtn.style.color = "white";
+                }
+            }
+        });
+    });
 
     card.addEventListener('click', (e) => {
         if (e.target.tagName === 'A' || e.target.tagName === 'BUTTON' || e.target.closest('a') || e.target.closest('button')) return;

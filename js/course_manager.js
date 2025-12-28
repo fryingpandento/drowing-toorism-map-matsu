@@ -150,18 +150,19 @@ export function resetRoutePoints(map) {
 }
 
 /**
- * Handle map click to set Start or End point.
- * @param {L.Map} map
+ * Set a specific route point (Start or End) explicitly.
+ * @param {L.Map} map 
  * @param {Object} latlng {lat, lng}
- * @returns {String} Status message ("Start Set", "Goal Set", "Ready")
+ * @param {String} type 'start' or 'end'
+ * @returns {String} Status
  */
-export function setRoutePoint(map, latlng) {
+export function setExplicitRoutePoint(map, latlng, type) {
     if (!routeLayer) {
         routeLayer = L.layerGroup().addTo(map);
     }
 
-    if (!startPoint) {
-        // Set Start
+    if (type === 'start') {
+        if (startMarker) routeLayer.removeLayer(startMarker);
         startPoint = latlng;
         startMarker = L.marker([latlng.lat, latlng.lng], {
             icon: L.divIcon({
@@ -171,9 +172,8 @@ export function setRoutePoint(map, latlng) {
                 iconAnchor: [12, 12]
             })
         }).addTo(routeLayer).bindPopup("<b>スタート</b>").openPopup();
-        return "start_set";
-    } else if (!endPoint) {
-        // Set End
+    } else if (type === 'end') {
+        if (endMarker) routeLayer.removeLayer(endMarker);
         endPoint = latlng;
         endMarker = L.marker([latlng.lat, latlng.lng], {
             icon: L.divIcon({
@@ -183,9 +183,25 @@ export function setRoutePoint(map, latlng) {
                 iconAnchor: [12, 12]
             })
         }).addTo(routeLayer).bindPopup("<b>ゴール</b>").openPopup();
-        return "goal_set";
+    }
+
+    if (startPoint && endPoint) return "goal_set"; // Ready
+    if (startPoint) return "start_set";
+    return "reset";
+}
+
+/**
+ * Handle map click to set Start or End point (Sequential).
+ * @param {L.Map} map
+ * @param {Object} latlng {lat, lng}
+ * @returns {String} Status message
+ */
+export function setRoutePoint(map, latlng) {
+    if (!startPoint) {
+        return setExplicitRoutePoint(map, latlng, 'start');
+    } else if (!endPoint) {
+        return setExplicitRoutePoint(map, latlng, 'end');
     } else {
-        // Both set, maybe reset or ignore?
         return "full";
     }
 }
