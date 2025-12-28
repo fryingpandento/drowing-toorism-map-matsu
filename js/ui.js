@@ -2,13 +2,37 @@ import { REGIONS, TOURISM_FILTERS } from './config.js';
 import { isFavorite, toggleFavorite } from './store.js';
 import { generateShareURL } from './share.js';
 // applyFilters dynamic import used below
-import { generateCourseFromLocation } from './course_manager.js';
+import { setRoutePoint, resetRoutePoints, generateDetourCourse } from './course_manager.js';
 
 let currentMode = 'pan';
 let mapInstance = null; // Store map instance
 
 export function initUI(map) {
     mapInstance = map;
+
+    // Map Click Listener for Route Mode
+    map.on('click', (e) => {
+        if (currentMode === 'route') {
+            const status = setRoutePoint(map, e.latlng);
+            // We need to call updateRouteStatus but it is defined locally inside initUI block in my previous replace (which works if I define it there)
+            // Wait, in my previous replace I defined `updateRouteStatus` INSIDE the block? 
+            // The previous replace replaced lines 34-49. It ENDED with the `updateRouteStatus` function definition?
+            // No, functions defined inside `initUI` (if I pasted it there) are accessible.
+            // But `updateRouteStatus` is needed here.
+            // I should define `updateRouteStatus` at module level or hoisting?
+            // Function declarations are hoisted if at top level of function.
+            // But if I pasted it inside the `if (header)` block?
+            // Looking at my replacement content: It ends with `}` of `if (header)`? No.
+            // My replacement content in previous step closes `if (header)` then defines `hint` logic, then defines `updateRouteStatus`.
+            // So `updateRouteStatus` is inside `initUI` scope? Yes.
+            // So it should be fine.
+            if (typeof updateRouteStatus === 'function') {
+                updateRouteStatus(status);
+            } else {
+                console.error("updateRouteStatus not found");
+            }
+        }
+    });
 
     // Sidebar Header: Add Share and Auto Course Buttons
     const header = document.querySelector('#sidebar h1');
@@ -30,141 +54,199 @@ export function initUI(map) {
             generateShareURL(mapInstance);
         };
 
-        // Auto Course Button
-        const courseBtn = document.createElement('button');
-        courseBtn.textContent = "🎲 コース生成";
-        courseBtn.className = "mode-btn";
-        courseBtn.style.padding = "5px 10px";
-        courseBtn.style.fontSize = "0.9rem";
-        courseBtn.style.backgroundColor = "#e0f7fa";
-        courseBtn.style.color = "#006064";
+        // Route Mode Button (Replaces Auto Course)
+        const routeBtn = document.createElement('button');
+        routeBtn.textContent = "📍 ルート作成";
+        routeBtn.className = "mode-btn";
+        routeBtn.style.padding = "5px 10px";
+        routeBtn.style.fontSize = "0.9rem";
+        routeBtn.style.backgroundColor = "#e0f7fa";
+        routeBtn.style.color = "#006064";
 
-        courseBtn.onclick = async (e) => {
+        routeBtn.onclick = (e) => {
             e.stopPropagation();
-            courseBtn.textContent = "⏳ 生成中...";
-            courseBtn.disabled = true;
-            await generateCourseFromLocation(mapInstance);
-            courseBtn.textContent = "🎲 コース生成";
-            courseBtn.disabled = false;
+            setMode('route');
         };
 
         actionContainer.appendChild(shareBtn);
-        actionContainer.appendChild(courseBtn);
+        actionContainer.appendChild(routeBtn);
 
         header.parentNode.insertBefore(actionContainer, header.nextSibling);
     }
 
+    // Route Control Panel (Hidden by default)
+    const hint = document.getElementById('mode-hint');
+    if (hint) {
+        const routePanel = document.createElement('div');
+        routePanel.id = "route-panel";
+        routePanel.style.display = "none";
+        routePanel.style.padding = "10px";
+        routePanel.style.background = "#fff3cd"; // Yellowish
+        routePanel.style.border = "1px solid #ffeeba";
+        routePanel.style.borderRadius = "5px";
+        routePanel.style.marginTop = "10px";
+        routePanel.style.marginBottom = "5px";
+        routePanel.innerHTML = `
+            <div id="route-msg" style="font-weight:bold; margin-bottom:5px; font-size:0.9em;">地図をクリックしてスタート地点を選択</div>
+            <div style="display:flex; gap:5px;">
+                <button id="route-reset" style="flex:1; padding:5px;">リセット</button>
+                <button id="route-gen" style="flex:1; padding:5px; font-weight:bold; background:#ccc; color:white; border:none;" disabled>生成</button>
+            </div>
+        `;
+        // Insert after hint
+        hint.parentNode.insertBefore(routePanel, hint.nextSibling);
+
+        // Bind Events
+        routePanel.querySelector('#route-reset').onclick = () => {
+            resetRoutePoints(mapInstance);
+            updateRouteStatus('reset');
+        };
+        routePanel.querySelector('#route-gen').onclick = async function () {
+            this.textContent = "生成中...";
+            this.disabled = true;
+            await generateDetourCourse(mapInstance);
+            this.textContent = "生成";
+            this.disabled = false;
+        };
+    }
+
+    function updateRouteStatus(status) {
+        const msg = document.getElementById('route-msg');
+        const genBtn = document.getElementById('route-gen');
+        if (!msg || !genBtn) return;
+
+        if (status === 'start_set') {
+            msg.textContent = "次はゴール地点を選択してください";
+        } else if (status === 'goal_set') {
+            msg.textContent = "「生成」ボタンを押してください";
+            genBtn.disabled = false;
+            genBtn.style.backgroundColor = "#ff4b4b";
+            genBtn.style.color = "white";
+        } else if (status === 'reset') {
+            msg.textContent = "地図をクリックしてスタート地点を選択";
+            genBtn.disabled = true;
+            genBtn.style.backgroundColor = "#ccc";
+            genBtn.style.color = "white";
+        }
+    }
+
+    actionContainer.appendChild(shareBtn);
+    actionContainer.appendChild(courseBtn);
+
+    header.parentNode.insertBefore(actionContainer, header.nextSibling);
+}
 
 
 
-    // Better Strategy: Insert before #region-select's parent .control-group
-    const targetSelect = document.getElementById('region-select');
-    if (targetSelect) {
-        const regionGroup = targetSelect.closest('.control-group');
-        if (regionGroup) {
-            const searchContainer = document.createElement('div');
-            searchContainer.className = 'control-group';
-            searchContainer.innerHTML = `
+
+// Better Strategy: Insert before #region-select's parent .control-group
+const targetSelect = document.getElementById('region-select');
+if (targetSelect) {
+    const regionGroup = targetSelect.closest('.control-group');
+    if (regionGroup) {
+        const searchContainer = document.createElement('div');
+        searchContainer.className = 'control-group';
+        searchContainer.innerHTML = `
                 <label>📍 地名・駅名で移動</label>
                 <div style="display:flex; gap:5px;">
                     <input type="text" id="geo-input" placeholder="例: 京都駅, 嵐山" style="flex:1; padding:8px; border:1px solid #ccc; border-radius:4px;">
                     <button id="geo-search-btn" style="padding:8px 12px; cursor:pointer; background:#eee; border:1px solid #ccc; border-radius:4px;">Go</button>
                 </div>
             `;
-            regionGroup.parentNode.insertBefore(searchContainer, regionGroup);
+        regionGroup.parentNode.insertBefore(searchContainer, regionGroup);
+    }
+}
+
+// Mode Toggle Logic
+document.getElementById('mode-pan').addEventListener('click', () => setMode('pan'));
+document.getElementById('mode-draw').addEventListener('click', () => setMode('draw'));
+document.getElementById('mode-box').addEventListener('click', () => setMode('box'));
+document.getElementById('mode-radius').addEventListener('click', () => setMode('radius'));
+
+// Region Select
+const regionSelect = document.getElementById('region-select');
+Object.keys(REGIONS).forEach(key => {
+    const option = document.createElement('option');
+    option.value = key;
+    option.textContent = key;
+    if (key === "関東 (東京)") option.selected = true;
+    regionSelect.appendChild(option);
+});
+
+regionSelect.addEventListener('change', (e) => {
+    const coords = REGIONS[e.target.value];
+    map.setView([coords[0], coords[1]], coords[2]);
+});
+
+// Categories
+const catList = document.getElementById('category-list');
+Object.keys(TOURISM_FILTERS).forEach(key => {
+    const div = document.createElement('div');
+    div.className = 'checkbox-item';
+    div.innerHTML = `<label><input type="checkbox" value="${key}" checked> ${key}</label>`;
+    catList.appendChild(div);
+});
+
+// Filters (Client-side)
+// We need to import applyFilters from api.js. 
+// To avoid top-level await or cycle issues, we can just bind it inside a lambda if imported.
+const handleFilter = () => {
+    import('./api.js').then(module => module.applyFilters());
+    // Dynamic import or standard import? Standard import is circular. 
+    // Let's try standard import at top.
+}
+document.getElementById('filter-text').addEventListener('input', handleFilter);
+document.getElementById('filter-web').addEventListener('change', handleFilter);
+document.getElementById('filter-wiki').addEventListener('change', handleFilter);
+document.getElementById('filter-hours').addEventListener('change', handleFilter);
+
+// Radius Slider Listener
+const radiusSlider = document.getElementById('radius-select');
+const radiusVal = document.getElementById('radius-val');
+if (radiusSlider && radiusVal) {
+    radiusSlider.addEventListener('input', (e) => {
+        const val = parseInt(e.target.value);
+        if (val >= 1000) {
+            radiusVal.textContent = (val / 1000) + "km";
+        } else {
+            radiusVal.textContent = val + "m";
         }
-    }
-
-    // Mode Toggle Logic
-    document.getElementById('mode-pan').addEventListener('click', () => setMode('pan'));
-    document.getElementById('mode-draw').addEventListener('click', () => setMode('draw'));
-    document.getElementById('mode-box').addEventListener('click', () => setMode('box'));
-    document.getElementById('mode-radius').addEventListener('click', () => setMode('radius'));
-
-    // Region Select
-    const regionSelect = document.getElementById('region-select');
-    Object.keys(REGIONS).forEach(key => {
-        const option = document.createElement('option');
-        option.value = key;
-        option.textContent = key;
-        if (key === "関東 (東京)") option.selected = true;
-        regionSelect.appendChild(option);
     });
+}
 
-    regionSelect.addEventListener('change', (e) => {
-        const coords = REGIONS[e.target.value];
-        map.setView([coords[0], coords[1]], coords[2]);
-    });
+// Mobile Bottom Sheet Toggle
+const sidebarHandle = document.getElementById('sidebar-handle');
+const sidebarCloseBtn = document.getElementById('sidebar-close-btn');
+const sidebar = document.getElementById('sidebar');
 
-    // Categories
-    const catList = document.getElementById('category-list');
-    Object.keys(TOURISM_FILTERS).forEach(key => {
-        const div = document.createElement('div');
-        div.className = 'checkbox-item';
-        div.innerHTML = `<label><input type="checkbox" value="${key}" checked> ${key}</label>`;
-        catList.appendChild(div);
-    });
-
-    // Filters (Client-side)
-    // We need to import applyFilters from api.js. 
-    // To avoid top-level await or cycle issues, we can just bind it inside a lambda if imported.
-    const handleFilter = () => {
-        import('./api.js').then(module => module.applyFilters());
-        // Dynamic import or standard import? Standard import is circular. 
-        // Let's try standard import at top.
-    }
-    document.getElementById('filter-text').addEventListener('input', handleFilter);
-    document.getElementById('filter-web').addEventListener('change', handleFilter);
-    document.getElementById('filter-wiki').addEventListener('change', handleFilter);
-    document.getElementById('filter-hours').addEventListener('change', handleFilter);
-
-    // Radius Slider Listener
-    const radiusSlider = document.getElementById('radius-select');
-    const radiusVal = document.getElementById('radius-val');
-    if (radiusSlider && radiusVal) {
-        radiusSlider.addEventListener('input', (e) => {
-            const val = parseInt(e.target.value);
-            if (val >= 1000) {
-                radiusVal.textContent = (val / 1000) + "km";
-            } else {
-                radiusVal.textContent = val + "m";
-            }
+if (sidebar) {
+    if (sidebarCloseBtn) {
+        sidebarCloseBtn.addEventListener('click', (e) => {
+            sidebar.classList.remove('expanded');
+            e.stopPropagation();
         });
     }
 
-    // Mobile Bottom Sheet Toggle
-    const sidebarHandle = document.getElementById('sidebar-handle');
-    const sidebarCloseBtn = document.getElementById('sidebar-close-btn');
-    const sidebar = document.getElementById('sidebar');
-
-    if (sidebar) {
-        if (sidebarCloseBtn) {
-            sidebarCloseBtn.addEventListener('click', (e) => {
+    sidebar.addEventListener('click', (e) => {
+        if (e.target.tagName === 'INPUT' || e.target.tagName === 'SELECT' || e.target.tagName === 'BUTTON' || e.target.tagName === 'A' || e.target.tagName === 'LABEL') {
+            return;
+        }
+        if (sidebar.classList.contains('expanded')) {
+            const isHandle = e.target === sidebarHandle || e.target.closest('#sidebar-handle');
+            const isHeader = e.target.tagName === 'H1' || e.target.closest('h1');
+            if (isHandle || isHeader) {
                 sidebar.classList.remove('expanded');
-                e.stopPropagation();
-            });
+            }
+        } else {
+            sidebar.classList.add('expanded');
         }
+    });
+}
 
-        sidebar.addEventListener('click', (e) => {
-            if (e.target.tagName === 'INPUT' || e.target.tagName === 'SELECT' || e.target.tagName === 'BUTTON' || e.target.tagName === 'A' || e.target.tagName === 'LABEL') {
-                return;
-            }
-            if (sidebar.classList.contains('expanded')) {
-                const isHandle = e.target === sidebarHandle || e.target.closest('#sidebar-handle');
-                const isHeader = e.target.tagName === 'H1' || e.target.closest('h1');
-                if (isHandle || isHeader) {
-                    sidebar.classList.remove('expanded');
-                }
-            } else {
-                sidebar.classList.add('expanded');
-            }
-        });
-    }
-
-    // Default Mobile Mode
-    if (window.innerWidth <= 768) {
-        setMode('radius');
-    }
+// Default Mobile Mode
+if (window.innerWidth <= 768) {
+    setMode('radius');
+}
 
 }
 
