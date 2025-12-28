@@ -130,10 +130,6 @@ export function initUI(map) {
         }
     }
 
-    actionContainer.appendChild(shareBtn);
-    actionContainer.appendChild(courseBtn);
-
-    header.parentNode.insertBefore(actionContainer, header.nextSibling);
 }
 
 
