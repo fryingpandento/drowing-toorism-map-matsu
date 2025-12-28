@@ -44,6 +44,12 @@ const TOURISM_FILTERS = {
         'node["tourism"="zoo"]',
         'node["tourism"="aquarium"]',
         'node["leisure"="resort"]'
+    ],
+    "🍴 グルメ・食事": [
+        'node["amenity"="restaurant"]',
+        'node["amenity"="cafe"]',
+        'node["amenity"="fast_food"]',
+        'node["amenity"="food_court"]'
     ]
 };
 
@@ -52,6 +58,8 @@ let map;
 let drawControl;
 let drawnItems;
 let allSpots = [];
+let favoritesLayer; // Layer Group for favorites
+let favoriteIds = new Set(); // Set of IDs (names for now)
 
 // --- Initialization ---
 document.addEventListener('DOMContentLoaded', () => {
@@ -63,6 +71,7 @@ document.addEventListener('DOMContentLoaded', () => {
     }
     initMap(mapElement);
     initUI();
+    loadFavorites(); // Load saved favorites
 
     // Default to 'Radius' mode on mobile
     if (window.innerWidth <= 768) {
@@ -82,6 +91,9 @@ function initMap(mapElement) {
     L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png', {
         attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
     }).addTo(map);
+
+    // Initialize Favorites Layer
+    favoritesLayer = L.layerGroup().addTo(map);
 
     // 3. Custom Freehand Drawing Events
     // Mouse Events
@@ -112,6 +124,12 @@ function initMap(mapElement) {
         endDraw();
     });
 }
+// (Lines 116-477 omitted for brevity, will be preserved or updated as needed via separate edits if changes are huge.
+// Actually, I need to update createCard (Lines 517-597).
+// I will use `multi_replace` or separate calls if the distance is too large.
+// The `TOURISM_FILTERS` change is at the top. `createCard` is at the bottom.
+// I can do `TOURISM_FILTERS` first.
+
 
 function initUI() {
     // Mode Toggle Logic
@@ -564,21 +582,34 @@ function createCard(spot, container) {
 
     const googleUrl = `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(name + " 観光")}`;
 
+    // Favorite Button State
+    const isFav = isFavorite(name);
+    const pinBtnText = isFav ? "★ ピン留め済" : "☆ ピン留め";
+    const pinBtnClass = isFav ? "pin-btn active" : "pin-btn";
+
     const card = document.createElement('div');
     card.className = 'spot-card';
     card.innerHTML = `
-        <div class="spot-title">${name} <span style="font-size:0.8em; color:#ff4b4b; margin-left:5px;">📍${distText}</span></div>
+        <div class="spot-title">
+            ${name} <span style="font-size:0.8em; color:#ff4b4b; margin-left:5px;">📍${distText}</span>
+        </div>
         <div style="margin: 5px 0;">
             <span class="spot-tag">${subtype}</span>
             <span class="spot-details">${detailsHtml.join(' ')}</span>
         </div>
-        <a href="${googleUrl}" target="_blank" class="google-btn">🌏 Googleマップ</a>
+        <div style="display:flex; gap:10px; margin-top:8px;">
+            <a href="${googleUrl}" target="_blank" class="google-btn">🌏 Googleマップ</a>
+            <button class="${pinBtnClass}" onclick="toggleFavorite('${name.replace(/'/g, "\\'")}', ${spot.lat}, ${spot.lon}, this)">
+                ${pinBtnText}
+            </button>
+        </div>
     `;
 
     // Click to pan
     card.addEventListener('click', (e) => {
-        // Prevent pan if clicking a link or the Google Map button (which also has tag A or class google-btn)
-        if (e.target.tagName === 'A' || e.target.closest('a')) return;
+        // Prevent pan if clicking a link or button
+        if (e.target.tagName === 'A' || e.target.tagName === 'BUTTON' || e.target.closest('a') || e.target.closest('button')) return;
+
         map.setView([spot.lat, spot.lon], 16);
         L.popup()
             .setLatLng([spot.lat, spot.lon])
@@ -589,11 +620,79 @@ function createCard(spot, container) {
         if (window.innerWidth <= 768) {
             const sidebar = document.getElementById('sidebar');
             if (sidebar) sidebar.classList.remove('expanded');
-            e.stopPropagation(); // Prevent bubbling to sidebar (which would re-expand it)
+            e.stopPropagation();
         }
     });
 
     container.appendChild(card);
+}
+
+// --- Favorites System ---
+function isFavorite(name) {
+    return favoriteIds.has(name);
+}
+
+function toggleFavorite(name, lat, lon, btn) {
+    if (favoriteIds.has(name)) {
+        // Remove
+        favoriteIds.delete(name);
+        removeFromFavoritesLayer(name);
+        if (btn) {
+            btn.textContent = "☆ ピン留め";
+            btn.classList.remove('active');
+        }
+    } else {
+        // Add
+        favoriteIds.add(name);
+        addToFavoritesLayer(name, lat, lon);
+        if (btn) {
+            btn.textContent = "★ ピン留め済";
+            btn.classList.add('active');
+        }
+    }
+    saveFavorites();
+}
+
+function addToFavoritesLayer(name, lat, lon) {
+    // Check if duplicate marker exists? 
+    // Simple implementation: Store marker reference?
+    // For now, simple implementation logic.
+    const marker = L.marker([lat, lon], { title: name }).addTo(favoritesLayer);
+    marker.customId = name;
+    marker.bindPopup(`<b>${name}</b><br>★ お気に入り`);
+}
+
+function removeFromFavoritesLayer(name) {
+    favoritesLayer.eachLayer(layer => {
+        if (layer.customId === name) {
+            favoritesLayer.removeLayer(layer);
+        }
+    });
+}
+
+function saveFavorites() {
+    // Persist simply name/lat/lon so we can restore them
+    const favs = [];
+    favoritesLayer.eachLayer(layer => {
+        const latlng = layer.getLatLng();
+        favs.push({ name: layer.customId, lat: latlng.lat, lon: latlng.lng });
+    });
+    localStorage.setItem('map_favorites', JSON.stringify(favs));
+}
+
+function loadFavorites() {
+    try {
+        const saved = localStorage.getItem('map_favorites');
+        if (saved) {
+            const favs = JSON.parse(saved);
+            favs.forEach(f => {
+                favoriteIds.add(f.name);
+                addToFavoritesLayer(f.name, f.lat, f.lon);
+            });
+        }
+    } catch (e) {
+        console.error("Failed to load favorites", e);
+    }
 }
 
 // --- Client-side Filtering ---
