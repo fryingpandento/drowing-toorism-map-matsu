@@ -50,11 +50,16 @@ export async function searchSpots(layer) {
     try {
         // Retry Logic
         let attempts = 0;
-        const maxAttempts = 3; // Increased to 3 retries
-        let response;
+        const maxAttempts = 4; // Increased to 4 retries for persistence
+        let delay = 2000; // Start with 2s delay
 
         while (attempts < maxAttempts) {
             try {
+                // Signal user if retrying
+                if (attempts > 0) {
+                    statusMsg.textContent = `混雑中... 再試行 ${attempts}/${maxAttempts}`;
+                }
+
                 response = await fetch("https://overpass-api.de/api/interpreter", {
                     method: "POST",
                     body: "data=" + encodeURIComponent(overpassQuery)
@@ -62,19 +67,28 @@ export async function searchSpots(layer) {
 
                 if (response.ok) break; // Success
 
-                // If server error (5xx) or rate limit (429), wait and retry
-                if (response.status >= 500 || response.status === 429) {
+                // Handle 429 (Too Many Requests) and 5xx (Server Errors like 504 Gateway Timeout)
+                if (response.status === 429 || response.status >= 500) {
                     attempts++;
-                    console.warn(`API Error ${response.status}. Retrying (${attempts}/${maxAttempts})...`);
-                    await new Promise(r => setTimeout(r, 4000)); // Wait 4s
+                    console.warn(`API Error ${response.status}. Retrying (${attempts}/${maxAttempts}) in ${delay}ms...`);
+
+                    if (attempts >= maxAttempts) throw new Error(`Server Error: ${response.status}`);
+
+                    await new Promise(r => setTimeout(r, delay));
+                    delay *= 2; // Exponential backoff: 2s -> 4s -> 8s -> 16s
                 } else {
+                    // Client errors (400, etc) should not be retried
                     throw new Error(`API Error: ${response.status} ${response.statusText}`);
                 }
             } catch (err) {
+                // Network errors (fetch failed)
                 attempts++;
-                console.warn(`Fetch error. Retrying (${attempts}/${maxAttempts})...`, err);
+                console.warn(`Fetch connection error. Retrying (${attempts}/${maxAttempts})...`, err);
+
                 if (attempts >= maxAttempts) throw err;
-                await new Promise(r => setTimeout(r, 4000));
+
+                await new Promise(r => setTimeout(r, delay));
+                delay *= 2;
             }
         }
 
