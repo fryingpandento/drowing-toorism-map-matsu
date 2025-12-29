@@ -73,7 +73,7 @@ export async function generateThemedCourse(map, theme = 'random') {
 
     // Overpass API クエリ実行
     const query = `
-        [out:json][timeout:25];
+        [out:json][timeout:60];
         (
           ${specificQuery}
         );
@@ -81,13 +81,24 @@ export async function generateThemedCourse(map, theme = 'random') {
     `;
 
     try {
-        // Fix: Clean URL (removed Markdown syntax)
-        const response = await fetch('https://overpass-api.de/api/interpreter', {
-            method: 'POST',
-            body: query
-        });
+        // Retry logic: Try up to 2 times
+        let response;
+        for (let i = 0; i < 2; i++) {
+            try {
+                response = await fetch('https://overpass-api.de/api/interpreter', {
+                    method: 'POST',
+                    body: query
+                });
+                if (response.ok) break; // Success, exit loop
+                if (i === 0) await new Promise(r => setTimeout(r, 1000)); // Wait 1s before retry
+            } catch (e) {
+                console.warn(`Fetch attempt ${i + 1} failed:`, e);
+                if (i === 1) throw e; // Throw on last attempt
+                await new Promise(r => setTimeout(r, 1000)); // Wait 1s before retry
+            }
+        }
 
-        if (!response.ok) throw new Error("Overpass API Error");
+        if (!response || !response.ok) throw new Error("Overpass API Error");
         const data = await response.json();
         const elements = data.elements;
 
