@@ -47,95 +47,96 @@ export async function searchSpots(layer) {
     out center body;
     `;
 
-    // Retry Logic
-    let attempts = 0;
-    const maxAttempts = 2;
-    let response;
-
-    while (attempts < maxAttempts) {
-        try {
-            response = await fetch("https://overpass-api.de/api/interpreter", {
-                method: "POST",
-                body: "data=" + encodeURIComponent(overpassQuery)
-            });
-
-            if (response.ok) break; // Success
-
-            // If server error (5xx) or rate limit (429), wait and retry
-            if (response.status >= 500 || response.status === 429) {
-                attempts++;
-                console.warn(`API Error ${response.status}. Retrying (${attempts}/${maxAttempts})...`);
-                await new Promise(r => setTimeout(r, 2000)); // Wait 2s
-            } else {
-                throw new Error(`API Error: ${response.status} ${response.statusText}`);
-            }
-        } catch (err) {
-            attempts++;
-            console.warn(`Fetch error. Retrying (${attempts}/${maxAttempts})...`, err);
-            if (attempts >= maxAttempts) throw err;
-            await new Promise(r => setTimeout(r, 2000));
-        }
-    }
-
-    if (!response || !response.ok) {
-        throw new Error(`API Error: ${response ? response.status : 'Network Error'}`);
-    }
-
-    const text = await response.text();
-    let data;
     try {
-        data = JSON.parse(text);
-    } catch (e) {
-        console.error("JSON Parse Error. Response was:", text);
-        throw new Error("Invalid JSON response from API");
-    }
+        // Retry Logic
+        let attempts = 0;
+        const maxAttempts = 2;
+        let response;
 
-    const elements = data.elements || [];
-
-    // 4. Client-side Processing
-    const seen = new Set();
-    allSpots = [];
-
-    elements.forEach(el => {
-        const tags = el.tags || {};
-        const name = tags.name;
-
-        if (!name) return;
-        if (seen.has(name)) return;
-
-        seen.add(name);
-
-        // Calc lat/lon
-        const lat = el.lat || (el.center && el.center.lat);
-        const lon = el.lon || (el.center && el.center.lon);
-
-        if (lat && lon) {
+        while (attempts < maxAttempts) {
             try {
-                const latNum = Number(lat);
-                const lonNum = Number(lon);
-                const point = L.latLng(latNum, lonNum);
-                const dist = searchCenter.distanceTo(point);
+                response = await fetch("https://overpass-api.de/api/interpreter", {
+                    method: "POST",
+                    body: "data=" + encodeURIComponent(overpassQuery)
+                });
 
-                allSpots.push({ ...el, lat: latNum, lon: lonNum, distance: dist });
+                if (response.ok) break; // Success
+
+                // If server error (5xx) or rate limit (429), wait and retry
+                if (response.status >= 500 || response.status === 429) {
+                    attempts++;
+                    console.warn(`API Error ${response.status}. Retrying (${attempts}/${maxAttempts})...`);
+                    await new Promise(r => setTimeout(r, 2000)); // Wait 2s
+                } else {
+                    throw new Error(`API Error: ${response.status} ${response.statusText}`);
+                }
             } catch (err) {
-                console.warn("Skipping invalid spot:", err);
+                attempts++;
+                console.warn(`Fetch error. Retrying (${attempts}/${maxAttempts})...`, err);
+                if (attempts >= maxAttempts) throw err;
+                await new Promise(r => setTimeout(r, 2000));
             }
         }
-    });
 
-    // Sort by Distance
-    allSpots.sort((a, b) => a.distance - b.distance);
+        if (!response || !response.ok) {
+            throw new Error(`API Error: ${response ? response.status : 'Network Error'}`);
+        }
 
-    statusMsg.textContent = `完了: ${allSpots.length}件`;
+        const text = await response.text();
+        let data;
+        try {
+            data = JSON.parse(text);
+        } catch (e) {
+            console.error("JSON Parse Error. Response was:", text);
+            throw new Error("Invalid JSON response from API");
+        }
 
-    // --- Client-side Filtering based on Input ---
-    applyFilters();
+        const elements = data.elements || [];
 
-} catch (e) {
-    console.error("Search failed:", e);
-    statusMsg.textContent = "エラーが発生しました: " + e.message;
-    alert("データ取得に失敗しました: " + e.message);
-}
+        // 4. Client-side Processing
+        const seen = new Set();
+        allSpots = [];
+
+        elements.forEach(el => {
+            const tags = el.tags || {};
+            const name = tags.name;
+
+            if (!name) return;
+            if (seen.has(name)) return;
+
+            seen.add(name);
+
+            // Calc lat/lon
+            const lat = el.lat || (el.center && el.center.lat);
+            const lon = el.lon || (el.center && el.center.lon);
+
+            if (lat && lon) {
+                try {
+                    const latNum = Number(lat);
+                    const lonNum = Number(lon);
+                    const point = L.latLng(latNum, lonNum);
+                    const dist = searchCenter.distanceTo(point);
+
+                    allSpots.push({ ...el, lat: latNum, lon: lonNum, distance: dist });
+                } catch (err) {
+                    console.warn("Skipping invalid spot:", err);
+                }
+            }
+        });
+
+        // Sort by Distance
+        allSpots.sort((a, b) => a.distance - b.distance);
+
+        statusMsg.textContent = `完了: ${allSpots.length}件`;
+
+        // --- Client-side Filtering based on Input ---
+        applyFilters();
+
+    } catch (e) {
+        console.error("Search failed:", e);
+        statusMsg.textContent = "エラーが発生しました: " + e.message;
+        alert("データ取得に失敗しました: " + e.message);
+    }
 }
 
 export function applyFilters() {
