@@ -4,7 +4,8 @@ import { generateShareURL } from './share.js';
 // applyFilters dynamic import used below
 // applyFilters dynamic import used below
 import { generateThemedCourse } from './course_manager.js';
-import { getWikipediaSummary } from './api.js';
+import { generateThemedCourse } from './course_manager.js';
+import { getWikipediaSummary, getWikivoyageSummary } from './api.js';
 
 let currentMode = 'pan';
 let mapInstance = null; // Store map instance
@@ -396,15 +397,42 @@ export function createCard(spot, container) {
         // Add Links
         popupContent += `<div style="margin-top:10px;">${detailsHtml.join(' ')}</div>`;
 
+        // Async Fetch Wiki & Wikivoyage Data
+        if (wikiTag || name) {
+            // Placeholder for Wikivoyage
+            const voyagePlaceholderId = `voyage-summary-${Date.now()}`;
+            // Insert placeholder for Voyage BEFORE Wiki if we want it prioritized, or AFTER.
+            // Let's put it at the top of info if available because it's "Travel Guide".
+            const voyageDiv = document.createElement('div');
+            voyageDiv.id = voyagePlaceholderId;
+            voyageDiv.style.marginTop = "10px";
+
+            // Find the placeholder container in popupContent (it's a string currently, so we can't append easily until opened)
+            // Actually, we can just edit the popup content string before opening, or update DOM after.
+            // Updating DOM after open is easier for async.
+
+            // We need to inject the placeholder into the popup content string constructed above.
+            // Let's modify the popupContent string construction in the previous lines? 
+            // Better: just append the placeholder string.
+        }
+
+        // We'll handle the async logic properly inside the click handler context
+
+        // Define placeholders
+        let voyagePlaceholderId = null;
+        if (wikiTag || name) { // Try voyage for anything with a name
+            voyagePlaceholderId = `voyage-summary-${Date.now()}`;
+            popupContent += `<div id="${voyagePlaceholderId}" style="display:none; margin-top:10px; padding:10px; background:#e0f7fa; border-radius:5px; font-size:0.9em; color:#006064;"><strong>🧳 旅行ガイド</strong><br>読み込み中...</div>`;
+        }
+
         const popup = L.popup()
             .setLatLng([spot.lat, spot.lon])
             .setContent(popupContent)
             .openOn(mapInstance);
 
-        // Async Fetch Wiki Data
+        // 1. Wikipedia Fetch (Existing)
         if (wikiTag && wikiPlaceholderId) {
-            try {
-                const summary = await getWikipediaSummary(wikiTag);
+            getWikipediaSummary(wikiTag).then(summary => {
                 const el = document.getElementById(wikiPlaceholderId);
                 if (el && summary) {
                     let html = "";
@@ -415,11 +443,36 @@ export function createCard(spot, container) {
                     html += `<div style="text-align:right; margin-top:5px;"><a href="${summary.url}" target="_blank" style="font-size:0.8em;">...Wikipediaで読む</a></div>`;
                     el.innerHTML = html;
                 } else if (el) {
-                    el.style.display = 'none'; // Hide if no data
+                    el.style.display = 'none';
                 }
-            } catch (err) {
-                console.warn("Wiki update failed", err);
+            }).catch(e => console.warn(e));
+        }
+
+        // 2. Wikivoyage Fetch (New)
+        if (voyagePlaceholderId) {
+            // Determine title to search: tag > name
+            let searchTitle = name;
+            if (wikiTag && wikiTag.includes(':')) {
+                searchTitle = wikiTag.split(':')[1];
+            } else if (wikiTag) {
+                searchTitle = wikiTag;
             }
+
+            getWikivoyageSummary(searchTitle).then(summary => {
+                const el = document.getElementById(voyagePlaceholderId);
+                if (el && summary) {
+                    el.style.display = 'block'; // Show container
+                    let html = `<strong>🧳 旅行ガイド (${summary.title})</strong><br>`;
+                    if (summary.thumbnail) {
+                        // Optional: don't show thumbnail if Wiki already showed one, or show small?
+                        // Let's show it to be safe.
+                        html += `<img src="${summary.thumbnail}" style="width:100%; height:auto; border-radius:4px; margin:5px 0;">`;
+                    }
+                    html += `<div>${summary.extract}</div>`;
+                    html += `<div style="text-align:right; margin-top:5px;"><a href="${summary.url}" target="_blank" style="font-size:0.8em;">...Wikivoyageで見る</a></div>`;
+                    el.innerHTML = html;
+                }
+            }).catch(e => console.warn(e));
         }
 
         if (window.innerWidth <= 768) {

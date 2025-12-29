@@ -182,3 +182,30 @@ export async function getWikipediaSummary(wikiTag) {
         return null;
     }
 }
+
+/**
+ * Wikivoyageの要約を取得する
+ * @param {String} title Title to search (e.g. "京都駅")
+ */
+export async function getWikivoyageSummary(title) {
+    if (!title) return null;
+
+    // Wikivoyage API (Japanese)
+    const apiUrl = `https://ja.wikivoyage.org/api/rest_v1/page/summary/${encodeURIComponent(title)}`;
+
+    try {
+        const res = await fetch(apiUrl);
+        if (!res.ok) return null; // 404 if no travel guide exists
+        const data = await res.json();
+
+        return {
+            title: data.title,
+            extract: data.extract,
+            thumbnail: data.thumbnail ? data.thumbnail.source : null,
+            url: data.content_urls.desktop.page
+        };
+    } catch (e) {
+        // Silent fail is fine, not all places have guides
+        return null;
+    }
+}
