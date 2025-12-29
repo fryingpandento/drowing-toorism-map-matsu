@@ -50,7 +50,7 @@ export async function searchSpots(layer) {
     try {
         // Retry Logic
         let attempts = 0;
-        const maxAttempts = 2;
+        const maxAttempts = 3; // Increased to 3 retries
         let response;
 
         while (attempts < maxAttempts) {
@@ -66,7 +66,7 @@ export async function searchSpots(layer) {
                 if (response.status >= 500 || response.status === 429) {
                     attempts++;
                     console.warn(`API Error ${response.status}. Retrying (${attempts}/${maxAttempts})...`);
-                    await new Promise(r => setTimeout(r, 2000)); // Wait 2s
+                    await new Promise(r => setTimeout(r, 4000)); // Wait 4s
                 } else {
                     throw new Error(`API Error: ${response.status} ${response.statusText}`);
                 }
@@ -74,7 +74,7 @@ export async function searchSpots(layer) {
                 attempts++;
                 console.warn(`Fetch error. Retrying (${attempts}/${maxAttempts})...`, err);
                 if (attempts >= maxAttempts) throw err;
-                await new Promise(r => setTimeout(r, 2000));
+                await new Promise(r => setTimeout(r, 4000));
             }
         }
 
