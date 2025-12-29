@@ -421,7 +421,8 @@ export function createCard(spot, container) {
         let voyagePlaceholderId = null;
         if (wikiTag || name) { // Try voyage for anything with a name
             voyagePlaceholderId = `voyage-summary-${Date.now()}`;
-            popupContent += `<div id="${voyagePlaceholderId}" style="display:none; margin-top:10px; padding:10px; background:#e0f7fa; border-radius:5px; font-size:0.9em; color:#006064;"><strong>🧳 旅行ガイド</strong><br>読み込み中...</div>`;
+            // Show initially to prove it's trying
+            popupContent += `<div id="${voyagePlaceholderId}" style="margin-top:10px; padding:10px; background:#e0f7fa; border-radius:5px; font-size:0.9em; color:#006064;"><strong>🧳 旅行ガイド</strong><br>読み込み中...</div>`;
         }
 
         const popup = L.popup()
