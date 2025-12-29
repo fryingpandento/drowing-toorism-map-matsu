@@ -1,4 +1,5 @@
-import { getFavorites } from './store.js';
+import { getFavorites, addToFavoritesLayer } from './store.js';
+import { createPopupContent } from './popup.js';
 
 export function generateShareURL(map) {
     if (!map) return;
@@ -14,16 +15,20 @@ export function generateShareURL(map) {
     const params = new URLSearchParams();
 
     // 1. Add Favorites (pins)
-    // We need to access the favorites data. Since store.js exports getFavorites (assuming based on task), we use it.
-    // If getFavorites returns an array of objects {name, lat, lon}:
     const favorites = getFavorites();
     if (favorites.length > 0) {
         const pinsStr = favorites.map(fav => {
-            // Include markerClass (defaults to '' if missing)
             const cls = fav.markerClass || '';
-            // Format: lat,lon,name,markerClass
-            return `${fav.lat.toFixed(5)},${fav.lon.toFixed(5)},${encodeURIComponent(fav.name)},${encodeURIComponent(cls)}`;
+            // Compress tags: minimal set to save URL length? or full?
+            // Let's use full tags but encoded simply.
+            // We use JSON.stringify + encodeURIComponent.
+            // To save space, we might only want relevant tags, but 'tags' object is usually small enough for modern browsers.
+            const tagsJson = encodeURIComponent(JSON.stringify(fav.tags || {}));
+
+            // Format: lat,lon,name,markerClass,tagsJson
+            return `${fav.lat.toFixed(5)},${fav.lon.toFixed(5)},${encodeURIComponent(fav.name)},${encodeURIComponent(cls)},${tagsJson}`;
         }).join('|');
+
         params.set('pins', pinsStr);
     } else {
         // Fallback to center if no pins
@@ -40,7 +45,7 @@ export function generateShareURL(map) {
 
     // Copy to Clipboard
     navigator.clipboard.writeText(url).then(() => {
-        alert("URLをコピーしました！\n(お気に入りピンも含めて共有されます)\n" + url);
+        alert("URLをコピーしました！\n(詳細情報も含めて共有されます)\n" + url);
     }).catch(err => {
         console.error('Failed to copy: ', err);
         prompt("URLをコピーしてください:", url);
@@ -61,8 +66,8 @@ export function parseURLParams(map) {
 
     // 1. Restore Pins (Multiple)
     if (pins) {
-        const markerGroup = L.featureGroup();
         const pinList = pins.split('|');
+        const latlngs = []; // To fit bounds
 
         pinList.forEach(pinStr => {
             const parts = pinStr.split(',');
@@ -71,25 +76,26 @@ export function parseURLParams(map) {
                 const pLon = parseFloat(parts[1]);
                 const pName = decodeURIComponent(parts[2]);
                 const pClass = parts.length >= 4 ? decodeURIComponent(parts[3]) : '';
+                let pTags = {};
 
-                // Always use Custom Marker
-                // If pClass is empty, it will be gray (#666) defined in CSS .custom-marker
-                const icon = L.divIcon({
-                    className: `custom-marker ${pClass}`,
-                    iconSize: [20, 20],
-                    iconAnchor: [10, 10],
-                    popupAnchor: [0, -10]
-                });
+                if (parts.length >= 5 && parts[4]) {
+                    try {
+                        pTags = JSON.parse(decodeURIComponent(parts[4]));
+                    } catch (e) {
+                        console.warn("Failed to parse tags for pin", pName);
+                    }
+                }
+                if (!pTags.name) pTags.name = pName;
 
-                const marker = L.marker([pLat, pLon], { icon: icon }).bindPopup(pName);
-                marker.addTo(map);
-                markerGroup.addLayer(marker);
+                // Add to central layer as shared (isShared=true)
+                addToFavoritesLayer(pName, pLat, pLon, pClass, pTags, true);
+
+                latlngs.push([pLat, pLon]);
             }
         });
 
-        if (markerGroup.getLayers().length > 0) {
-            map.addLayer(markerGroup);
-            map.fitBounds(markerGroup.getBounds().pad(0.1));
+        if (latlngs.length > 0) {
+            map.fitBounds(L.latLngBounds(latlngs).pad(0.1));
             hasPins = true;
         }
     }

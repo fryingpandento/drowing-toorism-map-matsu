@@ -80,7 +80,10 @@ export function createPopupContent(spot, isFav, removeCallback) {
             btn.style.marginLeft = "10px";
             btn.style.padding = "2px 8px";
             btn.style.cursor = "pointer";
-            btn.onclick = removeCallback;
+            btn.onclick = (e) => {
+                if (e) e.stopPropagation();
+                removeCallback();
+            };
             favDiv.appendChild(btn);
         }
         container.appendChild(favDiv);

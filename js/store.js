@@ -54,7 +54,7 @@ export function removeFavorite(name) {
     }
 }
 
-export function addToFavoritesLayer(name, lat, lon, markerClass, tags = {}) {
+export function addToFavoritesLayer(name, lat, lon, markerClass, tags = {}, isShared = false) {
     // Ensure markerClass isn't undefined or null string
     const cls = markerClass || '';
 
@@ -70,6 +70,7 @@ export function addToFavoritesLayer(name, lat, lon, markerClass, tags = {}) {
     marker.customId = name;
     marker.customClass = cls;
     marker.customTags = tags; // Store tags for popup
+    marker.isShared = isShared; // Flag for shared pins
 
     // Bind using shared Popup Logic
     const spotData = {
@@ -82,8 +83,23 @@ export function addToFavoritesLayer(name, lat, lon, markerClass, tags = {}) {
 
     // We pass a callback for the 'Remove' button inside the popup
     const removeCb = () => {
-        removeFavorite(name);
-        // Map will likely close popup automatically if layer is removed
+        try {
+            console.log("Attempting to remove pin:", name, "IsShared:", isShared);
+            // If shared, we just remove layer. If favorite, we remove from storage too.
+            if (isShared) {
+                if (favoritesLayer.hasLayer(marker)) {
+                    favoritesLayer.removeLayer(marker);
+                    console.log("Shared pin removed from layer.");
+                } else {
+                    console.warn("Shared pin not found in layer (already removed?)");
+                }
+            } else {
+                removeFavorite(name);
+            }
+            // Map will likely close popup automatically if layer is removed
+        } catch (e) {
+            console.error("Error removing pin:", e);
+        }
     };
 
     const popupContent = createPopupContent(spotData, true, removeCb);
@@ -101,6 +117,7 @@ export function removeFromFavoritesLayer(name) {
 export function saveFavorites() {
     const favs = [];
     favoritesLayer.eachLayer(layer => {
+        if (layer.isShared) return; // Skip shared pins
         const latlng = layer.getLatLng();
         favs.push({
             name: layer.customId,
@@ -145,4 +162,24 @@ export function getFavorites() {
         });
     }
     return favs;
+}
+
+export function clearAllFavorites() {
+    // 1. Clear Layer
+    if (favoritesLayer) {
+        favoritesLayer.clearLayers();
+    }
+
+    // 2. Clear Set
+    favoriteIds.clear();
+
+    // 3. Clear Storage
+    localStorage.removeItem('map_favorites');
+
+    // 4. Update UI Buttons
+    const buttons = document.querySelectorAll('.pin-btn.active');
+    buttons.forEach(btn => {
+        btn.textContent = "☆ ピン留め";
+        btn.classList.remove('active');
+    });
 }

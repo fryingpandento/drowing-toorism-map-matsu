@@ -1,5 +1,5 @@
 import { REGIONS, TOURISM_FILTERS } from './config.js';
-import { isFavorite, toggleFavorite } from './store.js';
+import { isFavorite, toggleFavorite, clearAllFavorites } from './store.js';
 import { generateShareURL } from './share.js';
 // applyFilters dynamic import used below
 // applyFilters dynamic import used below
@@ -38,6 +38,21 @@ export function initUI(map) {
         };
 
         actionContainer.appendChild(shareBtn);
+
+        // Clear All Button
+        const clearBtn = document.createElement('button');
+        clearBtn.textContent = "🗑 全解除";
+        clearBtn.className = "mode-btn";
+        clearBtn.style.padding = "5px 10px";
+        clearBtn.style.fontSize = "0.9rem";
+        clearBtn.style.color = "#d32f2f";
+        clearBtn.onclick = (e) => {
+            e.stopPropagation();
+            if (confirm("すべてのピン留め（共有されたものを含む）を解除しますか？")) {
+                clearAllFavorites();
+            }
+        };
+        actionContainer.appendChild(clearBtn);
 
         header.parentNode.insertBefore(actionContainer, header.nextSibling);
     }
@@ -605,30 +620,49 @@ async function processFetchQueue() {
     if (isProcessingQueue) return;
     isProcessingQueue = true;
 
+    let delay = 2000; // Increased base delay to 2 seconds
+
     while (fetchQueue.length > 0) {
-        const item = fetchQueue.shift(); // FIFO
+        // Peek instead of shift first, to keep item if we need to backoff
+        // But simpler: just put back if failed? Or shift and define `item`.
+        const item = fetchQueue.shift();
 
         try {
             const fetchedAddress = await reverseGeocode(item.lat, item.lon);
 
             if (fetchedAddress) {
-                // Update Card
                 if (item.element) {
                     item.element.innerHTML = `🏠 ${fetchedAddress}`;
                     item.element.style.color = "#555";
                     item.element.classList.remove('addr-placeholder');
                 }
-                // Store in tags so popup uses it
                 item.spot.tags['addr:full'] = fetchedAddress;
+
+                // Success: reduce delay slowly back to base
+                delay = Math.max(2000, delay * 0.9);
             } else {
-                if (item.element) item.element.textContent = ""; // Hide if failed
+                if (item.element) item.element.textContent = "";
             }
         } catch (e) {
-            console.warn("Queue fetch error", e);
+            if (e.message && e.message.includes('429')) {
+                console.warn("Rate limited (429). Backing off...");
+                // Put item back at front
+                fetchQueue.unshift(item);
+
+                // Increase delay exponentially (max 30s)
+                delay = Math.min(30000, delay * 2);
+
+                // Wait extra long before *next* attempt
+                await new Promise(r => setTimeout(r, delay));
+                continue; // Iterate
+            } else {
+                console.warn("Queue fetch error", e);
+                // Non-retryable error, just move on
+            }
         }
 
-        // Wait to respect Rate Limit (1s per request)
-        await new Promise(r => setTimeout(r, 1200));
+        // Wait standard delay
+        await new Promise(r => setTimeout(r, delay));
     }
 
     isProcessingQueue = false;

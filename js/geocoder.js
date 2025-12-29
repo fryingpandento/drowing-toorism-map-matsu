@@ -55,6 +55,7 @@ export async function reverseGeocode(lat, lon) {
         }
         return null;
     } catch (e) {
+        if (e.message.includes('429')) throw e; // Re-throw 429 for backoff handling
         console.error("Reverse geocoding failed:", e);
         return null;
     }
