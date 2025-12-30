@@ -1,4 +1,4 @@
-import { createPopupContent } from './popup.js?v=3.4';
+import { createPopupContent } from './popup.js?v=3.5';
 
 let favoritesLayer; // Layer Group for favorites
 let favoriteIds = new Set(); // Set of IDs

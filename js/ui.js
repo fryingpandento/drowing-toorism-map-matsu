@@ -1,11 +1,11 @@
-import { REGIONS, TOURISM_FILTERS } from './config.js?v=3.4';
-import { isFavorite, toggleFavorite, clearAllFavorites } from './store.js?v=3.4';
-import { generateShareURL } from './share.js?v=3.4';
+import { REGIONS, TOURISM_FILTERS } from './config.js?v=3.5';
+import { isFavorite, toggleFavorite, clearAllFavorites } from './store.js?v=3.5';
+import { generateShareURL } from './share.js?v=3.5';
 // applyFilters dynamic import used below
 // applyFilters dynamic import used below
-import { generateThemedCourse } from './course_manager.js?v=3.4';
-import { getWikipediaSummary, getWikivoyageSummary } from './api.js?v=3.4';
-import { reverseGeocode } from './geocoder.js?v=3.4';
+import { generateThemedCourse } from './course_manager.js?v=3.5';
+import { getWikipediaSummary, getWikivoyageSummary } from './api.js?v=3.5';
+import { reverseGeocode } from './geocoder.js?v=3.5';
 
 let currentMode = 'pan';
 let mapInstance = null; // Store map instance
@@ -152,7 +152,7 @@ Object.keys(TOURISM_FILTERS).forEach(key => {
 // We need to import applyFilters from api.js. 
 // To avoid top-level await or cycle issues, we can just bind it inside a lambda if imported.
 const handleFilter = () => {
-    import('./api.js?v=3.4').then(module => module.applyFilters());
+    import('./api.js?v=3.5').then(module => module.applyFilters());
     // Dynamic import or standard import? Standard import is circular. 
     // Let's try standard import at top.
 }

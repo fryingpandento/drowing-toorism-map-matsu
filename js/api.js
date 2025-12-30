@@ -1,5 +1,5 @@
-import { TOURISM_FILTERS } from './config.js?v=3.4';
-import { displayResults } from './ui.js?v=3.4';
+import { TOURISM_FILTERS } from './config.js?v=3.5';
+import { displayResults } from './ui.js?v=3.5';
 
 let allSpots = [];
 
@@ -181,14 +181,19 @@ export function applyFilters() {
         const tags = spot.tags || {};
         const name = tags.name || "";
 
-        // Tag Search: Check if name matches OR any tag value matches
+        // Tag Search: Check if name matches OR any tag value matches OR Japanese Category matches
         let nameMatch = true;
         if (text) {
             const nameHit = name.toLowerCase().includes(text);
             const tagHit = Object.values(tags).some(val =>
                 String(val).toLowerCase().includes(text)
             );
-            if (!nameHit && !tagHit) return false;
+
+            // New: Check Japanese Mapped Category Names
+            const jpTags = getJapaneseTagString(tags);
+            const jpHit = jpTags.includes(text);
+
+            if (!nameHit && !tagHit && !jpHit) return false;
         }
 
         if (web && !tags.website) return false;
@@ -199,6 +204,36 @@ export function applyFilters() {
     });
 
     displayResults(filtered);
+}
+
+// Helper to map tags to Japanese searchable keywords
+function getJapaneseTagString(tags) {
+    let keywords = "";
+    if (tags.tourism === 'viewpoint') keywords += "展望台 ";
+    if (tags.natural === 'peak') keywords += "山 ";
+    if (tags.waterway === 'waterfall') keywords += "滝 ";
+    if (tags.natural === 'beach') keywords += "海 ビーチ ";
+    if (tags.historic === 'castle' || tags.castle_type) keywords += "城 城跡 ";
+    if (tags.amenity === 'place_of_worship') keywords += "神社 寺院 寺社 ";
+    if (tags.religion === 'shinto') keywords += "神社 ";
+    if (tags.religion === 'buddhist') keywords += "寺院 ";
+    if (tags.historic) keywords += "史跡 旧跡 歴史 ";
+    if (tags.tourism === 'museum') keywords += "博物館 ";
+    if (tags.tourism === 'artwork') keywords += "アート 芸術 ";
+    if (tags.tourism === 'gallery') keywords += "ギャラリー 美術館 ";
+    if (tags.amenity === 'public_bath' || tags.natural === 'hot_spring') keywords += "温泉 ";
+    if (tags.tourism === 'hotel' || tags.tourism === 'hostel' || tags.tourism === 'guest_house') keywords += "宿泊 ホテル ";
+    if (tags.tourism === 'theme_park') keywords += "テーマパーク ";
+    if (tags.tourism === 'zoo') keywords += "動物園 ";
+    if (tags.tourism === 'aquarium') keywords += "水族館 ";
+    if (tags.leisure === 'park') keywords += "公園 ";
+    if (tags.amenity === 'restaurant') keywords += "レストラン 食事 ";
+    if (tags.cuisine === 'ramen') keywords += "ラーメン ";
+    if (tags.cuisine === 'japanese' || tags.cuisine === 'sushi') keywords += "日本料理 寿司 ";
+    if (tags.cuisine === 'italian') keywords += "イタリアン ";
+    if (tags.amenity === 'cafe') keywords += "カフェ ";
+    if (tags.amenity === 'fast_food') keywords += "ファストフード ";
+    return keywords;
 }
 
 /**

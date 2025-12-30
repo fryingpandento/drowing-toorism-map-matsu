@@ -1,7 +1,7 @@
-import { getWikipediaSummary, getWikivoyageSummary } from './api.js?v=3.4';
-import { triggerRadiusSearch } from './map.js?v=3.4';
+import { getWikipediaSummary, getWikivoyageSummary } from './api.js?v=3.5';
+import { triggerRadiusSearch } from './map.js?v=3.5';
 
-console.log("Popup.js v3.4 loaded");
+console.log("Popup.js v3.5 loaded");
 
 /**
  * Creates the DOM Element for a spot popup with async content.
