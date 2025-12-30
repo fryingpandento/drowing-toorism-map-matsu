@@ -130,23 +130,35 @@ function endDraw(mapInstance) {
     }
 }
 
-function onPointSearch(e, mapInstance) {
+export function triggerRadiusSearch(lat, lon) {
     const mode = getCurrentMode();
-    if (mode !== 'radius') return;
+    // Force radius mode if not already (Optional, but user intent is clear)
+    // For now, let's respect the mode check or force it?
+    // User requested "Search around this pin", implies an explicit action.
+    // So we should probably allow it even if mode is not 'radius', OR switch mode found in UI.
+    // Let's force it for this specific action:
 
-    const center = e.latlng;
-    if (currentPolygon) mapInstance.removeLayer(currentPolygon);
+    // Remove existing polygon
+    if (currentPolygon) map.removeLayer(currentPolygon);
 
+    // Get radius from UI (or default)
     const radiusSelect = document.getElementById('radius-select');
     const radiusMeters = radiusSelect ? parseInt(radiusSelect.value, 10) : 3000;
 
+    const center = [lat, lon];
     const circle = L.circle(center, {
         radius: radiusMeters,
         color: '#ff4b4b',
         fillColor: '#ff4b4b',
         fillOpacity: 0.2
-    }).addTo(mapInstance);
+    }).addTo(map);
 
     currentPolygon = circle;
     searchSpots(circle);
+}
+
+function onPointSearch(e, mapInstance) {
+    const mode = getCurrentMode();
+    if (mode !== 'radius') return;
+    triggerRadiusSearch(e.latlng.lat, e.latlng.lng);
 }

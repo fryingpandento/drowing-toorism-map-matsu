@@ -1,4 +1,7 @@
 import { getWikipediaSummary, getWikivoyageSummary } from './api.js';
+import { triggerRadiusSearch } from './map.js';
+
+console.log("Popup.js v3.4 loaded");
 
 /**
  * Creates the DOM Element for a spot popup with async content.
@@ -86,6 +89,25 @@ export function createPopupContent(spot, isFav, removeCallback) {
             };
             favDiv.appendChild(btn);
         }
+
+        // Add "Search Around" Button
+        const searchBtn = document.createElement('button');
+        searchBtn.textContent = "📍 この周辺を探索";
+        searchBtn.style.marginTop = "5px";
+        searchBtn.style.display = "block";
+        searchBtn.style.width = "100%";
+        searchBtn.style.padding = "4px";
+        searchBtn.style.cursor = "pointer";
+        searchBtn.style.background = "#fff3e0";
+        searchBtn.style.border = "1px solid #ffcc80";
+        searchBtn.style.borderRadius = "4px";
+        searchBtn.onclick = (e) => {
+            if (e) e.stopPropagation();
+            // Call the map function
+            triggerRadiusSearch(spot.lat, spot.lon);
+        };
+        favDiv.appendChild(searchBtn);
+
         container.appendChild(favDiv);
     }
 
