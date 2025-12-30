@@ -140,6 +140,7 @@ Object.keys(REGIONS).forEach(key => {
 
 // Categories
 const catList = document.getElementById('category-list');
+if (catList) catList.innerHTML = ""; // Clear existing to prevent duplicates
 Object.keys(TOURISM_FILTERS).forEach(key => {
     const div = document.createElement('div');
     div.className = 'checkbox-item';

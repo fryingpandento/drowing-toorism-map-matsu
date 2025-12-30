@@ -1,5 +1,5 @@
-import { TOURISM_FILTERS } from './config.js';
-import { displayResults } from './ui.js';
+import { TOURISM_FILTERS } from './config.js?v=3.4';
+import { displayResults } from './ui.js?v=3.4';
 
 let allSpots = [];
 
