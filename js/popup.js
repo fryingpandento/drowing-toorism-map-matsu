@@ -1,5 +1,5 @@
-import { getWikipediaSummary, getWikivoyageSummary } from './api.js';
-import { triggerRadiusSearch } from './map.js';
+import { getWikipediaSummary, getWikivoyageSummary } from './api.js?v=3.4';
+import { triggerRadiusSearch } from './map.js?v=3.4';
 
 console.log("Popup.js v3.4 loaded");
 

@@ -1,5 +1,5 @@
-import { isDrawingMode, getCurrentMode } from './ui.js';
-import { searchSpots } from './api.js';
+import { isDrawingMode, getCurrentMode } from './ui.js?v=3.4';
+import { searchSpots } from './api.js?v=3.4';
 
 let map;
 let currentPolyline = null;

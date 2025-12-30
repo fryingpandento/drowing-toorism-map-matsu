@@ -1,8 +1,8 @@
-import { initMap } from './map.js';
-import { initUI, setMode } from './ui.js';
-import { initFavorites, toggleFavorite, removeFavorite } from './store.js';
-import { parseURLParams } from './share.js';
-import { searchLocation } from './geocoder.js';
+import { initMap } from './map.js?v=3.4';
+import { initUI, setMode } from './ui.js?v=3.4';
+import { initFavorites, toggleFavorite, removeFavorite } from './store.js?v=3.4';
+import { parseURLParams } from './share.js?v=3.4';
+import { searchLocation } from './geocoder.js?v=3.4';
 
 document.addEventListener('DOMContentLoaded', () => {
     const mapElement = document.getElementById('map');

@@ -1,5 +1,5 @@
-import { getFavorites, addToFavoritesLayer } from './store.js';
-import { createPopupContent } from './popup.js';
+import { getFavorites, addToFavoritesLayer } from './store.js?v=3.4';
+import { createPopupContent } from './popup.js?v=3.4';
 
 export function generateShareURL(map) {
     if (!map) return;
